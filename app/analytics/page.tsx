@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '../lib/supabase/server'
 import { redirect } from 'next/navigation'
 import KidAnalytics from '@/components/analytics/kid-analytics'
 import OverallStats from '@/components/analytics/overall-stats'

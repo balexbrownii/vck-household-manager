@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../../lib/supabase/client'
 import { TimeoutViolation } from '@/types'
 import { VIOLATION_RULES, formatTimeoutDuration } from '@/lib/domain/timeout-rules'
 import { TrendingUp, Calendar } from 'lucide-react'

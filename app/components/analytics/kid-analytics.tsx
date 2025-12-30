@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { Kid } from '@/types'
+import { createClient } from '../../lib/supabase/client'
+import { Kid } from '../../types'
 import { Activity, TrendingUp, AlertTriangle } from 'lucide-react'
 
 interface KidAnalyticsProps {
