@@ -86,8 +86,8 @@ export default function KidAnalytics({ kid }: KidAnalyticsProps) {
         .eq('kid_id', kid.id)
         .gte('started_at', sevenDaysAgoStr)
 
-      const topViolation = recentTimeouts && recentTimeouts.length > 0
-        ? recentTimeouts[0].violation_type
+      const topViolation = (recentTimeouts && recentTimeouts.length > 0)
+        ? recentTimeouts?.[0]?.violation_type || null
         : null
 
       setStats({

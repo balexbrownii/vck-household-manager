@@ -30,7 +30,7 @@ export default async function ParentDashboard() {
   }
 
   // Fetch today's expectations for all kids
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().split('T')[0] || ''
   const kidIds = kids.map((k) => k.id)
 
   const { data: expectations, error: expectationsError } = await supabase

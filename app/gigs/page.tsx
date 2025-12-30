@@ -43,7 +43,7 @@ export default async function GigsPage() {
     if (!gigsByTier[gig.tier]) {
       gigsByTier[gig.tier] = []
     }
-    gigsByTier[gig.tier].push(gig)
+    gigsByTier[gig.tier]!.push(gig)
   })
 
   const tierLabels = {

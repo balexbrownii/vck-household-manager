@@ -69,7 +69,7 @@ export default async function KidGigsPage({ params }: KidGigsPageProps) {
     if (!gigsByTier[gig.tier]) {
       gigsByTier[gig.tier] = []
     }
-    gigsByTier[gig.tier].push(gig)
+    gigsByTier[gig.tier]!.push(gig)
   })
 
   const tierLabels = {

@@ -52,7 +52,9 @@ export function isPastCutoff(
     : kid.screen_time_cutoff_weekday
 
   // Parse cutoff time (HH:MM:SS format)
-  const [hours, minutes] = cutoffTimeStr.split(':').map(Number)
+  const [hoursStr, minutesStr] = cutoffTimeStr.split(':')
+  const hours = parseInt(hoursStr || '0', 10)
+  const minutes = parseInt(minutesStr || '0', 10)
 
   const cutoffTime = new Date(currentTime)
   cutoffTime.setHours(hours, minutes, 0, 0)
@@ -73,7 +75,9 @@ export function getTimeUntilCutoff(
     : kid.screen_time_cutoff_weekday
 
   // Parse cutoff time
-  const [hours, minutes] = cutoffTimeStr.split(':').map(Number)
+  const [hoursStr, minutesStr] = cutoffTimeStr.split(':')
+  const hours = parseInt(hoursStr || '0', 10)
+  const minutes = parseInt(minutesStr || '0', 10)
 
   const cutoffTime = new Date(currentTime)
   cutoffTime.setHours(hours, minutes, 0, 0)
@@ -107,7 +111,9 @@ export function getCutoffAsTime(
     ? kid.screen_time_cutoff_weekend
     : kid.screen_time_cutoff_weekday
 
-  const [hours, minutes] = cutoffTimeStr.split(':').map(Number)
+  const [hoursStr, minutesStr] = cutoffTimeStr.split(':')
+  const hours = parseInt(hoursStr || '0', 10)
+  const minutes = parseInt(minutesStr || '0', 10)
 
   const cutoffTime = new Date(date)
   cutoffTime.setHours(hours, minutes, 0, 0)

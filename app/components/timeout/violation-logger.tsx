@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { VIOLATION_RULES, getViolationsByCategory, VIOLATION_CATEGORIES } from '@/lib/domain/timeout-rules'
+import { VIOLATION_RULES, getViolationsByCategory } from '@/lib/domain/timeout-rules'
 import { AlertTriangle, Plus } from 'lucide-react'
 
 interface ViolationLoggerProps {

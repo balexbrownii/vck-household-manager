@@ -50,7 +50,7 @@ export default function KidCard({
         </h3>
         <DailyChecklist
           kidId={kid.id}
-          date={new Date().toISOString().split('T')[0]}
+          date={new Date().toISOString().split('T')[0] || ''}
           expectations={expectations}
           onUpdate={handleUpdate}
         />

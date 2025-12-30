@@ -109,5 +109,5 @@ export function getDayOfWeek(date: Date = new Date()): number {
  * Get today's date as ISO string (YYYY-MM-DD)
  */
 export function getTodayAsString(): string {
-  return new Date().toISOString().split('T')[0]
+  return new Date().toISOString().split('T')[0] || ''
 }

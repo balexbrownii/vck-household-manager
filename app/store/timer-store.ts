@@ -42,15 +42,20 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   updateScreenTimer: (kidId, minutesRemaining) => {
-    set((state) => ({
-      screenTimers: {
-        ...state.screenTimers,
-        [kidId]: {
-          ...state.screenTimers[kidId],
-          minutesRemaining,
+    set((state) => {
+      const existingTimer = state.screenTimers[kidId]
+      if (!existingTimer) return state
+
+      return {
+        screenTimers: {
+          ...state.screenTimers,
+          [kidId]: {
+            ...existingTimer,
+            minutesRemaining,
+          },
         },
-      },
-    }))
+      }
+    })
   },
 
   stopScreenTimer: (kidId) => {
