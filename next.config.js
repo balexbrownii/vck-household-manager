@@ -1,15 +1,14 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   images: {
     remotePatterns: [],
   },
-  typescript: {
-    tsconfigPath: './tsconfig.json',
-  },
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': [require('path').resolve(__dirname, 'app/')],
+      '@': path.resolve(__dirname, 'app/'),
     };
     return config;
   },
