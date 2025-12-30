@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+:root {
+  --color-success: #16a34a;
+  --color-danger: #dc2626;
+  --color-warning: #ea580c;
+  --color-primary: #2563eb;
+}
+
+* {
+  @apply border-gray-200;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Color utility classes */
+.text-success {
+  @apply text-green-600;
+}
+
+.text-danger {
+  @apply text-red-600;
+}
+
+.text-warning {
+  @apply text-orange-600;
+}
+
+.text-primary {
+  @apply text-blue-600;
+}
+
+.bg-success {
+  @apply bg-green-600;
+}
+
+.bg-danger {
+  @apply bg-red-600;
+}
+
+.bg-warning {
+  @apply bg-orange-600;
+}
+
+.bg-primary {
+  @apply bg-blue-600;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
