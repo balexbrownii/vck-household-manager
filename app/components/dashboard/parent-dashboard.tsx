@@ -4,34 +4,33 @@ import KidCard from './kid-card'
 import { redirect } from 'next/navigation'
 
 export default async function ParentDashboard() {
-  try {
-    const supabase = await createClient()
+  const supabase = await createClient()
 
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+  // Check authentication
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-    if (!user) {
-      redirect('/login')
-    }
+  if (!user) {
+    redirect('/login')
+  }
 
-    // Fetch all kids
-    const { data: kids, error: kidsError } = await supabase
-      .from('kids')
-      .select('*')
-      .order('age', { ascending: true })
+  // Fetch all kids
+  const { data: kids, error: kidsError } = await supabase
+    .from('kids')
+    .select('*')
+    .order('age', { ascending: true })
 
-    if (kidsError || !kids) {
-      console.error('Kids fetch error:', kidsError)
-      console.error('User ID:', user?.id)
-      return (
-        <div className="text-center py-12">
-          <p className="text-red-600">Failed to load kids</p>
-          <p className="text-gray-600 text-sm mt-2">{kidsError?.message || 'No data returned'}</p>
-        </div>
-      )
-    }
+  if (kidsError || !kids) {
+    console.error('Kids fetch error:', kidsError)
+    console.error('User ID:', user?.id)
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600">Failed to load kids</p>
+        <p className="text-gray-600 text-sm mt-2">{kidsError?.message || 'No data returned'}</p>
+      </div>
+    )
+  }
 
   // Fetch today's expectations for all kids
   const today = new Date().toISOString().split('T')[0] || ''
