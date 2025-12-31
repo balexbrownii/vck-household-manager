@@ -22,9 +22,12 @@ export default async function ParentDashboard() {
     .order('age', { ascending: true })
 
   if (kidsError || !kids) {
+    console.error('Kids fetch error:', kidsError)
+    console.error('User ID:', user?.id)
     return (
       <div className="text-center py-12">
         <p className="text-red-600">Failed to load kids</p>
+        <p className="text-gray-600 text-sm mt-2">{kidsError?.message || 'No data returned'}</p>
       </div>
     )
   }
