@@ -6,16 +6,29 @@ import ScreenTimeStatus from './screen-time-status'
 import StarTracker from './star-tracker'
 import Link from 'next/link'
 
+interface PendingTimeout {
+  id: string
+  timeout_minutes: number
+  violation_type: string
+  reset_count: number
+}
+
 interface KidCardProps {
   kid: Kid
   expectations: DailyExpectation
   choreAssignment?: string
+  roomName?: string
+  choreChecklist?: string[]
+  pendingTimeout?: PendingTimeout
 }
 
 export default function KidCard({
   kid,
   expectations,
   choreAssignment,
+  roomName,
+  choreChecklist,
+  pendingTimeout,
 }: KidCardProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -42,6 +55,9 @@ export default function KidCard({
           date={new Date().toISOString().split('T')[0] || ''}
           expectations={expectations}
           choreAssignment={choreAssignment}
+          roomName={roomName}
+          choreChecklist={choreChecklist}
+          pendingTimeout={pendingTimeout}
         />
       </div>
 

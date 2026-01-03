@@ -1,13 +1,15 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Gig } from '@/types'
 import { Clock, Star } from 'lucide-react'
 
 interface GigCardProps {
   gig: Gig
-  onClaim?: (gigId: string) => void
-  loading?: boolean
+  kidId?: string
   isClaimed?: boolean
+  hasActiveGig?: boolean
 }
 
 const tierColors = {
@@ -28,10 +30,36 @@ const tierLabels = {
 
 export default function GigCard({
   gig,
-  onClaim,
-  loading,
+  kidId,
   isClaimed,
+  hasActiveGig,
 }: GigCardProps) {
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+
+  const handleClaim = async () => {
+    if (!kidId) return
+
+    setLoading(true)
+    try {
+      const response = await fetch('/api/gigs/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kidId, gigId: gig.id }),
+      })
+
+      if (response.ok) {
+        router.refresh()
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Failed to claim gig')
+      }
+    } catch (error) {
+      console.error('Error claiming gig:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <div
       className={`rounded-lg border-2 p-5 transition-all hover:shadow-md ${
@@ -77,18 +105,26 @@ export default function GigCard({
         </div>
       )}
 
-      {/* Claim button */}
-      <button
-        onClick={() => onClaim?.(gig.id)}
-        disabled={loading || isClaimed}
-        className={`w-full py-2 rounded font-semibold text-sm transition-colors ${
-          isClaimed
-            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-            : 'bg-primary text-white hover:bg-blue-700 disabled:opacity-50'
-        }`}
-      >
-        {isClaimed ? 'Claimed' : loading ? 'Claiming...' : 'Claim Gig'}
-      </button>
+      {/* Claim button - only show when kidId is provided */}
+      {kidId ? (
+        <button
+          onClick={handleClaim}
+          disabled={loading || isClaimed || hasActiveGig}
+          className={`w-full py-2 rounded font-semibold text-sm transition-colors ${
+            isClaimed
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : hasActiveGig
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-primary text-white hover:bg-blue-700 disabled:opacity-50'
+          }`}
+        >
+          {isClaimed ? 'Claimed' : hasActiveGig ? 'Finish current gig first' : loading ? 'Claiming...' : 'Claim Gig'}
+        </button>
+      ) : (
+        <div className="w-full py-2 rounded text-center text-sm text-gray-500 bg-gray-100">
+          View from kid's page to claim
+        </div>
+      )}
     </div>
   )
 }

@@ -2,12 +2,23 @@
 
 import { DailyExpectation } from '@/types'
 import ChecklistToggle from './checklist-toggle'
+import TimeoutToggle from './timeout-toggle'
+
+interface PendingTimeout {
+  id: string
+  timeout_minutes: number
+  violation_type: string
+  reset_count: number
+}
 
 interface DailyChecklistProps {
   kidId: string
   date: string
   expectations: DailyExpectation
   choreAssignment?: string
+  roomName?: string
+  choreChecklist?: string[]
+  pendingTimeout?: PendingTimeout
 }
 
 export default function DailyChecklist({
@@ -15,7 +26,15 @@ export default function DailyChecklist({
   date,
   expectations,
   choreAssignment,
+  roomName,
+  choreChecklist,
+  pendingTimeout,
 }: DailyChecklistProps) {
+  // Build the chore description with room name and tasks
+  const choreDescription = roomName
+    ? `${roomName}${choreChecklist && choreChecklist.length > 0 ? ': ' + choreChecklist.join(', ') : ''}`
+    : choreAssignment || 'Rotating assignment'
+
   const expectationItems = [
     {
       key: 'exercise_complete',
@@ -34,13 +53,23 @@ export default function DailyChecklist({
     },
     {
       key: 'daily_chore_complete',
-      label: 'Daily Chore',
-      description: choreAssignment || 'Rotating assignment',
+      label: `Daily Chore: ${choreAssignment || 'TBD'}`,
+      description: choreDescription,
     },
   ]
 
   return (
     <div className="space-y-3">
+      {/* Pending Timeout - shown first if exists */}
+      {pendingTimeout && (
+        <TimeoutToggle
+          timeoutId={pendingTimeout.id}
+          timeoutMinutes={pendingTimeout.timeout_minutes}
+          violationType={pendingTimeout.violation_type}
+          resetCount={pendingTimeout.reset_count}
+        />
+      )}
+
       {expectationItems.map((item) => (
         <ChecklistToggle
           key={item.key}

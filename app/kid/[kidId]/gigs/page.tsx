@@ -2,10 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import GigCard from '@/components/gigs/gig-card'
 import ClaimedGigStatus from '@/components/gigs/claimed-gig-status'
-import { Kid } from '@/types'
+import TopNav from '@/components/nav/top-nav'
+import Link from 'next/link'
 
 interface KidGigsPageProps {
-  params: { kidId: string }
+  params: Promise<{ kidId: string }>
 }
 
 export default async function KidGigsPage({ params }: KidGigsPageProps) {
@@ -20,7 +21,7 @@ export default async function KidGigsPage({ params }: KidGigsPageProps) {
     redirect('/login')
   }
 
-  const { kidId } = params
+  const { kidId } = await params
 
   // Fetch kid details
   const { data: kid, error: kidError } = await supabase
@@ -31,8 +32,14 @@ export default async function KidGigsPage({ params }: KidGigsPageProps) {
 
   if (kidError || !kid) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Kid not found</p>
+      <div className="min-h-screen bg-gray-50">
+        <TopNav />
+        <div className="text-center py-12">
+          <p className="text-red-600">Kid not found</p>
+          <Link href="/" className="text-blue-600 hover:underline mt-4 inline-block">
+            Back to Dashboard
+          </Link>
+        </div>
       </div>
     )
   }
@@ -46,6 +53,8 @@ export default async function KidGigsPage({ params }: KidGigsPageProps) {
     .limit(1)
     .single()
 
+  const hasActiveGig = !!claimedGig
+
   // Fetch available gigs filtered by kid's tier
   const { data: availableGigs, error: gigsError } = await supabase
     .from('gigs')
@@ -57,14 +66,17 @@ export default async function KidGigsPage({ params }: KidGigsPageProps) {
 
   if (gigsError || !availableGigs) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Failed to load gigs</p>
+      <div className="min-h-screen bg-gray-50">
+        <TopNav />
+        <div className="text-center py-12">
+          <p className="text-red-600">Failed to load gigs</p>
+        </div>
       </div>
     )
   }
 
   // Group gigs by tier
-  const gigsByTier: Record<number, any[]> = {}
+  const gigsByTier: Record<number, typeof availableGigs> = {}
   availableGigs.forEach((gig) => {
     if (!gigsByTier[gig.tier]) {
       gigsByTier[gig.tier] = []
@@ -81,12 +93,18 @@ export default async function KidGigsPage({ params }: KidGigsPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50">
+      <TopNav />
+      <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold text-gray-900">{kid.name}'s Gigs</h1>
+            <div>
+              <Link href="/" className="text-sm text-blue-600 hover:underline mb-2 inline-block">
+                ← Back to Dashboard
+              </Link>
+              <h1 className="text-3xl font-bold text-gray-900">{kid.name}'s Gigs</h1>
+            </div>
             <div className="text-right">
               <div className="text-sm text-gray-600">Stars</div>
               <div className="text-3xl font-bold text-yellow-500">
@@ -132,28 +150,9 @@ export default async function KidGigsPage({ params }: KidGigsPageProps) {
                         <GigCard
                           key={gig.id}
                           gig={gig}
+                          kidId={kidId}
                           isClaimed={claimedGig?.gig_id === gig.id}
-                          onClaim={async (gigId) => {
-                            // Would be called by client component
-                            try {
-                              const response = await fetch('/api/gigs/claim', {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                  kidId,
-                                  gigId,
-                                }),
-                              })
-
-                              if (response.ok) {
-                                window.location.reload()
-                              }
-                            } catch (error) {
-                              console.error('Error claiming gig:', error)
-                            }
-                          }}
+                          hasActiveGig={hasActiveGig && claimedGig?.gig_id !== gig.id}
                         />
                       ))}
                     </div>
@@ -169,7 +168,7 @@ export default async function KidGigsPage({ params }: KidGigsPageProps) {
             </div>
           )}
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   )
 }

@@ -68,6 +68,41 @@ export default async function ParentDashboard() {
     choreMap.set(ca.kid_id, ca.assignment)
   })
 
+  // Get today's day of week (0 = Sunday, 1 = Monday, etc.)
+  const dayOfWeek = new Date().getDay()
+
+  // Fetch today's chore rooms for all assignments
+  const assignments = Array.from(new Set(choreAssignments?.map(ca => ca.assignment) || []))
+  const { data: choreRooms } = await supabase
+    .from('chore_rooms')
+    .select('*')
+    .eq('day_of_week', dayOfWeek)
+    .in('assignment', assignments)
+
+  // Create a map of today's room details by assignment
+  const roomMap = new Map<string, { room_name: string; checklist: string[] }>()
+  choreRooms?.forEach((room) => {
+    roomMap.set(room.assignment, { room_name: room.room_name, checklist: room.checklist || [] })
+  })
+
+  // Fetch pending timeouts (not completed) for all kids
+  const { data: pendingTimeouts } = await supabase
+    .from('timeout_violations')
+    .select('*')
+    .in('kid_id', kidIds)
+    .is('completed_at', null)
+
+  // Create a map of pending timeouts by kid_id
+  const timeoutMap = new Map<string, { id: string; timeout_minutes: number; violation_type: string; reset_count: number }>()
+  pendingTimeouts?.forEach((timeout) => {
+    timeoutMap.set(timeout.kid_id, {
+      id: timeout.id,
+      timeout_minutes: timeout.timeout_minutes,
+      violation_type: timeout.violation_type,
+      reset_count: timeout.reset_count,
+    })
+  })
+
   // Create a map of expectations by kid_id, with defaults for kids without records
   const expectationsMap = new Map<string, DailyExpectation>()
   expectations?.forEach((exp) => {
@@ -89,9 +124,11 @@ export default async function ParentDashboard() {
   const kidExpectations = kids.map((kid) => {
     const exp = expectationsMap.get(kid.id)
     const choreAssignment = choreMap.get(kid.id) || 'Not assigned'
+    const roomDetails = roomMap.get(choreAssignment)
+    const pendingTimeout = timeoutMap.get(kid.id)
 
     if (exp) {
-      return { kid, expectation: exp, choreAssignment }
+      return { kid, expectation: exp, choreAssignment, roomDetails, pendingTimeout }
     }
 
     // Return default expectation for kids without records
@@ -102,6 +139,8 @@ export default async function ParentDashboard() {
         kid_id: kid.id,
       } as DailyExpectation,
       choreAssignment,
+      roomDetails,
+      pendingTimeout,
     }
   })
 
@@ -122,12 +161,15 @@ export default async function ParentDashboard() {
 
       {/* Kid Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {kidExpectations.map(({ kid, expectation, choreAssignment }) => (
+        {kidExpectations.map(({ kid, expectation, choreAssignment, roomDetails, pendingTimeout }) => (
           <KidCard
             key={kid.id}
             kid={kid}
             expectations={expectation}
             choreAssignment={choreAssignment}
+            roomName={roomDetails?.room_name}
+            choreChecklist={roomDetails?.checklist}
+            pendingTimeout={pendingTimeout}
           />
         ))}
       </div>

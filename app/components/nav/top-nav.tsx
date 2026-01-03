@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Zap, AlertTriangle, BarChart3, FileText, Settings } from 'lucide-react'
+import { Home, Zap, AlertTriangle, BarChart3, FileText, Settings, ClipboardList } from 'lucide-react'
 
 export default function TopNav() {
   const pathname = usePathname()
@@ -11,6 +11,7 @@ export default function TopNav() {
 
   const navItems = [
     { href: '/', label: 'Dashboard', icon: Home },
+    { href: '/chores', label: 'Chores', icon: ClipboardList },
     { href: '/screen-time', label: 'Screen Time', icon: Zap },
     { href: '/timeout', label: 'Timeouts', icon: AlertTriangle },
     { href: '/gigs/inspect', label: 'Inspect Gigs', icon: Settings },
