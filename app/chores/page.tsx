@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import TopNav from '@/components/nav/top-nav'
 import WeekSelector from '@/components/dashboard/week-selector'
+import Link from 'next/link'
+import { Settings } from 'lucide-react'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -101,7 +103,16 @@ export default async function ChoresPage() {
                 3-week rotation schedule with daily room assignments
               </p>
             </div>
-            <WeekSelector currentWeek={currentWeek} />
+            <div className="flex items-center gap-3">
+              <WeekSelector currentWeek={currentWeek} />
+              <Link
+                href="/chores/admin"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline">Edit Rooms</span>
+              </Link>
+            </div>
           </div>
         </div>
 
