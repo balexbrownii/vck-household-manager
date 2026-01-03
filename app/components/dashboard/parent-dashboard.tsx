@@ -97,10 +97,6 @@ export default async function ParentDashboard() {
             key={kid.id}
             kid={kid}
             expectations={expectation}
-            onUpdate={() => {
-              // Refresh page to get latest data
-              // In a real app, this would use SWR or similar for client-side revalidation
-            }}
           />
         ))}
       </div>
