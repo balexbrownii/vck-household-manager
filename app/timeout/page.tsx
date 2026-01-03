@@ -94,10 +94,6 @@ export default async function TimeoutPage() {
                 <ViolationLogger
                   kidId={kid.id}
                   kidName={kid.name}
-                  onViolationLogged={() => {
-                    // Would trigger page refresh in real app
-                    // For now, just shows success
-                  }}
                 />
               </div>
             ))}
