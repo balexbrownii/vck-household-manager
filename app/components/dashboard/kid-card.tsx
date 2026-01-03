@@ -4,7 +4,6 @@ import { Kid, DailyExpectation } from '@/types'
 import DailyChecklist from './daily-checklist'
 import ScreenTimeStatus from './screen-time-status'
 import StarTracker from './star-tracker'
-import { useState } from 'react'
 import Link from 'next/link'
 
 interface KidCardProps {
@@ -18,16 +17,6 @@ export default function KidCard({
   expectations,
   choreAssignment,
 }: KidCardProps) {
-  const [refreshing, setRefreshing] = useState(false)
-
-  const handleUpdate = async () => {
-    setRefreshing(true)
-    if (onUpdate) {
-      onUpdate()
-    }
-    setRefreshing(false)
-  }
-
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
       {/* Header with kid name and age */}
