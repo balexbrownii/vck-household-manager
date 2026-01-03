@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Gig, Kid } from '@/types'
 import GigCard from '@/components/gigs/gig-card'
+import TopNav from '@/components/nav/top-nav'
 import { redirect } from 'next/navigation'
 
 export default async function GigsPage() {
@@ -55,9 +56,11 @@ export default async function GigsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
+    <>
+      <TopNav />
+      <main className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {/* Header */}
         <div className="mb-12">
           <h1 className="text-3xl font-bold text-gray-900">Available Gigs</h1>
           <p className="text-gray-600 mt-2">
@@ -82,10 +85,6 @@ export default async function GigsPage() {
                     <GigCard
                       key={gig.id}
                       gig={gig}
-                      onClaim={(gigId) => {
-                        // This will be handled by kid selector below
-                        alert('Select a kid first in the sidebar')
-                      }}
                     />
                   ))}
                 </div>
@@ -114,8 +113,9 @@ export default async function GigsPage() {
               <strong>One gig at a time:</strong> Must finish or abandon before claiming another
             </li>
           </ul>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   )
 }

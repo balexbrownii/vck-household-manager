@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import GigInspectionForm from '@/components/gigs/gig-inspection-form'
 import ClaimedGigStatus from '@/components/gigs/claimed-gig-status'
+import TopNav from '@/components/nav/top-nav'
 import { redirect } from 'next/navigation'
 
 export default async function InspectGigsPage() {
@@ -39,8 +40,10 @@ export default async function InspectGigsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto px-4 py-8">
+    <>
+      <TopNav />
+      <main className="min-h-screen bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-3xl font-bold text-gray-900">Inspect Gigs</h1>
@@ -119,8 +122,9 @@ export default async function InspectGigsPage() {
               <p className="text-gray-500">No recent activity</p>
             </div>
           )}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   )
 }
