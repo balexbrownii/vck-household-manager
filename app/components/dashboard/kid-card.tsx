@@ -10,13 +10,13 @@ import Link from 'next/link'
 interface KidCardProps {
   kid: Kid
   expectations: DailyExpectation
-  onUpdate?: () => void
+  choreAssignment?: string
 }
 
 export default function KidCard({
   kid,
   expectations,
-  onUpdate,
+  choreAssignment,
 }: KidCardProps) {
   const [refreshing, setRefreshing] = useState(false)
 
@@ -52,7 +52,7 @@ export default function KidCard({
           kidId={kid.id}
           date={new Date().toISOString().split('T')[0] || ''}
           expectations={expectations}
-          onUpdate={handleUpdate}
+          choreAssignment={choreAssignment}
         />
       </div>
 

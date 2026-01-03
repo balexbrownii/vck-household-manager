@@ -46,6 +46,27 @@ export default async function ParentDashboard() {
     console.error('Error fetching expectations:', expectationsError)
   }
 
+  // Fetch current chore rotation state
+  const { data: rotationState } = await supabase
+    .from('chore_rotation_state')
+    .select('*')
+    .single()
+
+  const currentWeek = rotationState?.current_week || 'A'
+
+  // Fetch chore assignments for current week
+  const { data: choreAssignments } = await supabase
+    .from('chore_assignments')
+    .select('*')
+    .eq('week', currentWeek)
+    .in('kid_id', kidIds)
+
+  // Create a map of chore assignments by kid_id
+  const choreMap = new Map<string, string>()
+  choreAssignments?.forEach((ca) => {
+    choreMap.set(ca.kid_id, ca.assignment)
+  })
+
   // Create a map of expectations by kid_id, with defaults for kids without records
   const expectationsMap = new Map<string, DailyExpectation>()
   expectations?.forEach((exp) => {
@@ -66,8 +87,10 @@ export default async function ParentDashboard() {
 
   const kidExpectations = kids.map((kid) => {
     const exp = expectationsMap.get(kid.id)
+    const choreAssignment = choreMap.get(kid.id) || 'Not assigned'
+
     if (exp) {
-      return { kid, expectation: exp }
+      return { kid, expectation: exp, choreAssignment }
     }
 
     // Return default expectation for kids without records
@@ -77,6 +100,7 @@ export default async function ParentDashboard() {
         ...defaultExpectation,
         kid_id: kid.id,
       } as DailyExpectation,
+      choreAssignment,
     }
   })
 
@@ -86,17 +110,18 @@ export default async function ParentDashboard() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Family Dashboard</h1>
         <p className="text-gray-600 mt-2">
-          {today} • {kids.length} {kids.length === 1 ? 'child' : 'children'}
+          {today} • {kids.length} {kids.length === 1 ? 'child' : 'children'} • Week {currentWeek}
         </p>
       </div>
 
       {/* Kid Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {kidExpectations.map(({ kid, expectation }) => (
+        {kidExpectations.map(({ kid, expectation, choreAssignment }) => (
           <KidCard
             key={kid.id}
             kid={kid}
             expectations={expectation}
+            choreAssignment={choreAssignment}
           />
         ))}
       </div>
