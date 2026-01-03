@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import TopNav from '@/components/nav/top-nav'
 import ChoreRoomEditor from '@/components/chores/chore-room-editor'
+import KidAssignmentEditor from '@/components/chores/kid-assignment-editor'
 import Link from 'next/link'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -13,6 +14,19 @@ interface ChoreRoom {
   day_of_week: number
   room_name: string
   checklist: string[]
+}
+
+interface Kid {
+  id: string
+  name: string
+  age: number
+}
+
+interface ChoreAssignment {
+  id: string
+  kid_id: string
+  week: string
+  assignment: string
 }
 
 export default async function ChoresAdminPage() {
@@ -32,6 +46,17 @@ export default async function ChoresAdminPage() {
     .select('*')
     .order('assignment', { ascending: true })
     .order('day_of_week', { ascending: true })
+
+  // Fetch all kids
+  const { data: kids } = await supabase
+    .from('kids')
+    .select('id, name, age')
+    .order('age', { ascending: true })
+
+  // Fetch all chore assignments
+  const { data: choreAssignments } = await supabase
+    .from('chore_assignments')
+    .select('id, kid_id, week, assignment')
 
   if (error) {
     return (
@@ -62,13 +87,24 @@ export default async function ChoresAdminPage() {
               <Link href="/chores" className="text-sm text-blue-600 hover:underline mb-2 inline-block">
                 ← Back to Chores
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900">Edit Chore Rooms</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Edit Chores</h1>
               <p className="text-gray-600 mt-1">
-                Update room names and task checklists
+                Manage kid assignments and room checklists
               </p>
             </div>
           </div>
         </div>
+
+        {/* Kid Assignment Editor */}
+        <div className="mb-8">
+          <KidAssignmentEditor
+            kids={kids || []}
+            assignments={choreAssignments || []}
+          />
+        </div>
+
+        {/* Section Header for Room Editors */}
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Room Details by Day</h2>
 
         {/* Editor by Assignment */}
         <div className="space-y-8">
