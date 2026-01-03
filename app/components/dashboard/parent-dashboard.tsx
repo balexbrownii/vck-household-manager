@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Kid, DailyExpectation } from '@/types'
 import KidCard from './kid-card'
+import WeekSelector from './week-selector'
 import { redirect } from 'next/navigation'
 
 export default async function ParentDashboard() {
@@ -108,10 +109,15 @@ export default async function ParentDashboard() {
     <div className="space-y-6">
       {/* Dashboard Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Family Dashboard</h1>
-        <p className="text-gray-600 mt-2">
-          {today} • {kids.length} {kids.length === 1 ? 'child' : 'children'} • Week {currentWeek}
-        </p>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Family Dashboard</h1>
+            <p className="text-gray-600 mt-2">
+              {today} • {kids.length} {kids.length === 1 ? 'child' : 'children'}
+            </p>
+          </div>
+          <WeekSelector currentWeek={currentWeek} />
+        </div>
       </div>
 
       {/* Kid Cards Grid */}

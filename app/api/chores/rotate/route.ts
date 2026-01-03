@@ -28,16 +28,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate next week
+    // Check if a specific week was requested
+    const body = await request.json().catch(() => ({}))
     const weeks: ('A' | 'B' | 'C')[] = ['A', 'B', 'C']
-    const currentIndex = weeks.indexOf(rotationState.current_week)
-    const nextWeek = weeks[(currentIndex + 1) % 3]
+
+    let newWeek: 'A' | 'B' | 'C'
+    if (body.week && weeks.includes(body.week)) {
+      // Manual week selection
+      newWeek = body.week
+    } else {
+      // Auto-rotate to next week
+      const currentIndex = weeks.indexOf(rotationState.current_week)
+      newWeek = weeks[(currentIndex + 1) % 3]
+    }
 
     // Update rotation state
     const { data, error } = await supabase
       .from('chore_rotation_state')
       .update({
-        current_week: nextWeek,
+        current_week: newWeek,
         week_start_date: new Date().toISOString().split('T')[0],
         next_rotation_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
           .toISOString()
