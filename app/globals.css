@@ -507,7 +507,7 @@ body {
   width: 16px;
   height: 16px;
   border-radius: var(--radius-full);
-  border: 2.5px solid var(--color-bg-tertiary);
+  border: 2.5px solid #c7c7cc;
   background: transparent;
   transition: all var(--transition-fast);
 }
