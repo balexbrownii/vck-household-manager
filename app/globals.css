@@ -705,6 +705,47 @@ body {
   }
 }
 
+/* PWA Standalone mode optimizations */
+@media (display-mode: standalone) {
+  html {
+    /* Disable text selection for app feel */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input, textarea {
+    /* Allow selection in input fields */
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Prevent long-press context menu */
+  img, a {
+    -webkit-touch-callout: none;
+  }
+}
+
+/* iOS notch & home indicator handling */
+.kid-page {
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.parent-page {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Prevent rubber-banding on iOS */
+html, body {
+  overscroll-behavior: none;
+}
+
+/* Better tap highlighting for native feel */
+* {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
+}
+
 /* ============================================
    Legacy Utility Classes (for compatibility)
    ============================================ */

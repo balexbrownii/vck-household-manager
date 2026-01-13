@@ -5,16 +5,35 @@ export const metadata: Metadata = {
   title: "StarKids",
   description: "Help kids earn stars through chores, gigs, and responsibilities",
   manifest: "/manifest.json",
+  applicationName: "StarKids",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "StarKids",
+    startupImage: [
+      {
+        url: "/splash.png",
+        media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)",
+      },
+    ],
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#9333ea",
 };
 
 export default function RootLayout({
@@ -24,7 +43,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-white">
+      <head>
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
+      <body className="bg-white antialiased touch-manipulation">
         {children}
       </body>
     </html>
