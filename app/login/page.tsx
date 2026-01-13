@@ -70,9 +70,10 @@ export default function LoginPage() {
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            VCK Household Manager
-          </h1>
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">⭐</span>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">StarKids</h1>
           <p className="text-gray-600 mt-2">Parent Login</p>
         </div>
 

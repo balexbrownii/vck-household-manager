@@ -2,16 +2,18 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Zap, AlertTriangle, BarChart3, FileText, Settings, ClipboardList } from 'lucide-react'
+import { Home, Zap, AlertTriangle, BarChart3, FileText, Settings, ClipboardList, UtensilsCrossed } from 'lucide-react'
 
 export default function TopNav() {
   const pathname = usePathname()
 
-  const isActive = (href: string) => pathname === href
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href)
 
   const navItems = [
     { href: '/', label: 'Dashboard', icon: Home },
     { href: '/chores', label: 'Chores', icon: ClipboardList },
+    { href: '/meals', label: 'Meals', icon: UtensilsCrossed },
     { href: '/screen-time', label: 'Screen Time', icon: Zap },
     { href: '/timeout', label: 'Timeouts', icon: AlertTriangle },
     { href: '/gigs/inspect', label: 'Inspect Gigs', icon: Settings },

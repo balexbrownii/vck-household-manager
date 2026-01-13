@@ -145,3 +145,122 @@ export interface UserProfile {
   created_at: string
   updated_at: string
 }
+
+// ============================================
+// MEAL PLANNING TYPES
+// ============================================
+
+export interface RecipeCategory {
+  id: string
+  name: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert' | 'drink'
+  sort_order: number
+  created_at: string
+}
+
+export interface RecipeIngredient {
+  item: string
+  amount: string
+  unit: string
+  potassium_mg?: number
+  folate_mcg?: number
+  b12_mcg?: number
+  vitamin_c_mg?: number
+  protein_g?: number
+  magnesium_mg?: number
+  note?: string
+}
+
+export interface Recipe {
+  id: string
+  title: string
+  category_id: string
+  description: string | null
+  recipe_number: number | null
+
+  // Nutrients per serving
+  calories: number | null
+  protein_g: number | null
+  potassium_mg: number | null
+  folate_mcg: number | null
+  b12_mcg: number | null
+  vitamin_c_mg: number | null
+  magnesium_mg: number | null
+  fiber_g: number | null
+
+  // Prep info
+  estimated_minutes: number | null
+  servings: number
+
+  // Content
+  ingredients: RecipeIngredient[]
+  instructions: string[]
+
+  // Family notes
+  alex_modifications: string | null
+  alexander_notes: string | null
+  victoria_notes: string | null
+
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface MealPlanEntry {
+  id: string
+  recipe_id: string
+  planned_date: string
+  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert' | 'drink'
+  servings_planned: number
+  notes: string | null
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MealCompletion {
+  id: string
+  meal_plan_entry_id: string
+  completed_at: string
+  served_by: string | null
+  notes: string | null
+  rating: number | null
+  created_at: string
+}
+
+export interface MealPrepGig {
+  id: string
+  meal_plan_entry_id: string
+  kid_id: string | null
+  prep_type: 'full_cook' | 'sous_chef' | 'setup' | 'cleanup'
+  stars_offered: number
+  status: 'available' | 'claimed' | 'completed' | 'cancelled'
+  completed_at: string | null
+  verified_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ShoppingListItem {
+  id: string
+  week_start_date: string
+  ingredient_name: string
+  quantity: string | null
+  unit: string | null
+  category: string | null
+  source_recipe_ids: string[]
+  purchased: boolean
+  purchased_at: string | null
+  purchased_by: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+// Joined types for API responses
+export interface MealPlanEntryWithRecipe extends MealPlanEntry {
+  recipes: Recipe
+}
+
+export interface RecipeWithCategory extends Recipe {
+  recipe_categories: RecipeCategory
+}

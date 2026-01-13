@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { VIOLATION_RULES, getViolationsByCategory } from '@/lib/domain/timeout-rules'
 import { AlertTriangle, Plus } from 'lucide-react'
 
@@ -11,6 +12,7 @@ interface ViolationLoggerProps {
 }
 
 export default function ViolationLogger({ kidId, kidName, onViolationLogged }: ViolationLoggerProps) {
+  const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState<string>('respect')
   const [selectedViolation, setSelectedViolation] = useState<string>('')
   const [notes, setNotes] = useState('')
@@ -54,6 +56,9 @@ export default function ViolationLogger({ kidId, kidName, onViolationLogged }: V
       setSelectedViolation('')
       setNotes('')
       setSelectedCategory('respect')
+
+      // Refresh the page to show the new timeout in Active Timeouts
+      router.refresh()
 
       // Call callback
       onViolationLogged?.()
@@ -150,7 +155,7 @@ export default function ViolationLogger({ kidId, kidName, onViolationLogged }: V
         className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
       >
         <Plus className="w-5 h-5" />
-        {isLogging ? 'Logging...' : 'Start Timeout'}
+        {isLogging ? 'Logging...' : 'Log Violation'}
       </button>
     </div>
   )
