@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import TopNav from '@/components/nav/top-nav'
 import { ShoppingList } from '@/components/meals'
-import { getWeekStartDate } from '@/lib/domain/meal-planning'
+import { getWeekStartDate, formatDateLocal, parseDateLocal } from '@/lib/domain/meal-planning'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 
@@ -27,15 +27,15 @@ export default async function ShoppingPage({ searchParams }: ShoppingPageProps) 
   const weekParam = searchParams.week
   const weekStartDate = weekParam || getWeekStartDate(today)
 
-  // Calculate previous and next week
-  const currentWeekStart = new Date(weekStartDate)
+  // Calculate previous and next week (using local date parsing)
+  const currentWeekStart = parseDateLocal(weekStartDate)
   const prevWeekStart = new Date(currentWeekStart)
   prevWeekStart.setDate(prevWeekStart.getDate() - 7)
   const nextWeekStart = new Date(currentWeekStart)
   nextWeekStart.setDate(nextWeekStart.getDate() + 7)
 
-  const prevWeek = prevWeekStart.toISOString().split('T')[0]
-  const nextWeek = nextWeekStart.toISOString().split('T')[0]
+  const prevWeek = formatDateLocal(prevWeekStart)
+  const nextWeek = formatDateLocal(nextWeekStart)
   const thisWeek = getWeekStartDate(today)
 
   // Fetch shopping list for the week
@@ -47,11 +47,11 @@ export default async function ShoppingPage({ searchParams }: ShoppingPageProps) 
     .order('ingredient_name')
 
   // Format week range for display
-  const weekEndDate = new Date(weekStartDate)
+  const weekEndDate = new Date(currentWeekStart)
   weekEndDate.setDate(weekEndDate.getDate() + 6)
-  const formatDate = (d: Date) =>
+  const formatDateDisplay = (d: Date) =>
     d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  const weekLabel = `${formatDate(new Date(weekStartDate))} - ${formatDate(weekEndDate)}`
+  const weekLabel = `${formatDateDisplay(currentWeekStart)} - ${formatDateDisplay(weekEndDate)}`
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -196,12 +196,30 @@ export function calculateMealPrepStars(prepType: PrepType): number {
 }
 
 /**
+ * Format a date to YYYY-MM-DD in local timezone
+ */
+export function formatDateLocal(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+/**
+ * Parse a YYYY-MM-DD string as local time (not UTC)
+ */
+export function parseDateLocal(dateStr: string): Date {
+  // Adding T00:00:00 ensures the date is parsed as local time
+  return new Date(dateStr + 'T00:00:00')
+}
+
+/**
  * Get the start of the week (Sunday) for a given date
  */
 export function getWeekStartDate(date: Date): string {
   const d = new Date(date)
   d.setDate(d.getDate() - d.getDay())
-  return d.toISOString().split('T')[0]
+  return formatDateLocal(d)
 }
 
 /**
@@ -209,12 +227,12 @@ export function getWeekStartDate(date: Date): string {
  */
 export function getWeekDates(weekStartDate: string): string[] {
   const dates: string[] = []
-  const start = new Date(weekStartDate)
+  const start = parseDateLocal(weekStartDate)
 
   for (let i = 0; i < 7; i++) {
     const d = new Date(start)
     d.setDate(start.getDate() + i)
-    dates.push(d.toISOString().split('T')[0])
+    dates.push(formatDateLocal(d))
   }
 
   return dates

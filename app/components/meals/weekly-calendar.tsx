@@ -6,6 +6,7 @@ import { MealPlanEntryWithRecipe, Recipe, MealType } from '@/types'
 import MealSlot from './meal-slot'
 import RecipeCard from './recipe-card'
 import { X } from 'lucide-react'
+import { parseDateLocal, formatDateLocal } from '@/lib/domain/meal-planning'
 
 interface WeeklyCalendarProps {
   weekStartDate: string
@@ -28,11 +29,12 @@ export default function WeeklyCalendar({
   } | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // Build 7-day array from weekStartDate
+  // Build 7-day array from weekStartDate (using local date parsing)
+  const startDate = parseDateLocal(weekStartDate)
   const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(weekStartDate)
-    date.setDate(date.getDate() + i)
-    return date.toISOString().split('T')[0]
+    const date = new Date(startDate)
+    date.setDate(startDate.getDate() + i)
+    return formatDateLocal(date)
   })
 
   // Build lookup map for meal plan
@@ -108,8 +110,9 @@ export default function WeeklyCalendar({
           {/* Header row - empty corner + days */}
           <div className="p-2"></div>
           {weekDays.map((date, i) => {
-            const d = new Date(date)
-            const isToday = date === new Date().toISOString().split('T')[0]
+            const d = parseDateLocal(date)
+            const todayStr = formatDateLocal(new Date())
+            const isToday = date === todayStr
             return (
               <div
                 key={date}
@@ -172,8 +175,8 @@ export default function WeeklyCalendar({
                   Select Recipe
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {DAYS[new Date(selectedSlot.date).getDay()]}{' '}
-                  {new Date(selectedSlot.date).toLocaleDateString()} -{' '}
+                  {DAYS[parseDateLocal(selectedSlot.date).getDay()]}{' '}
+                  {parseDateLocal(selectedSlot.date).toLocaleDateString()} -{' '}
                   <span className="capitalize">{selectedSlot.mealType}</span>
                 </p>
               </div>

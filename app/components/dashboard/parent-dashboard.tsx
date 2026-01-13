@@ -177,22 +177,6 @@ export default async function ParentDashboard() {
         ))}
       </div>
 
-      {/* Quick Stats */}
-      <div className="quick-stats">
-        {kidExpectations.map(({ kid, expectation }) => (
-          <div key={kid.id} className="stat-card">
-            <div className="stat-value">
-              {expectation.all_complete ? (
-                <span className="text-green-500">✓</span>
-              ) : (
-                <span className="text-gray-300">○</span>
-              )}
-            </div>
-            <div className="stat-label">{kid.name}</div>
-          </div>
-        ))}
-      </div>
-
       {/* Admin Actions */}
       <div className="pt-6 border-t border-gray-200">
         <div className="action-buttons">

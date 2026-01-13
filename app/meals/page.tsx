@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import TopNav from '@/components/nav/top-nav'
 import { WeeklyCalendar, NutrientSummary } from '@/components/meals'
-import { getWeekStartDate } from '@/lib/domain/meal-planning'
+import { getWeekStartDate, formatDateLocal, parseDateLocal } from '@/lib/domain/meal-planning'
 import { MealPlanEntryWithRecipe } from '@/types'
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
@@ -28,23 +28,23 @@ export default async function MealsPage({ searchParams }: MealsPageProps) {
   const weekParam = searchParams.week
   const weekStartDate = weekParam || getWeekStartDate(today)
 
-  // Calculate previous and next week
-  const currentWeekStart = new Date(weekStartDate)
+  // Calculate previous and next week (using local date parsing)
+  const currentWeekStart = parseDateLocal(weekStartDate)
   const prevWeekStart = new Date(currentWeekStart)
   prevWeekStart.setDate(prevWeekStart.getDate() - 7)
   const nextWeekStart = new Date(currentWeekStart)
   nextWeekStart.setDate(nextWeekStart.getDate() + 7)
 
-  const prevWeek = prevWeekStart.toISOString().split('T')[0]
-  const nextWeek = nextWeekStart.toISOString().split('T')[0]
+  const prevWeek = formatDateLocal(prevWeekStart)
+  const nextWeek = formatDateLocal(nextWeekStart)
   const thisWeek = getWeekStartDate(today)
 
   // Build week dates array
   const weekDates: string[] = []
   for (let i = 0; i < 7; i++) {
-    const d = new Date(weekStartDate)
-    d.setDate(d.getDate() + i)
-    weekDates.push(d.toISOString().split('T')[0])
+    const d = new Date(currentWeekStart)
+    d.setDate(currentWeekStart.getDate() + i)
+    weekDates.push(formatDateLocal(d))
   }
 
   // Fetch meal plan for the week
@@ -65,7 +65,7 @@ export default async function MealsPage({ searchParams }: MealsPageProps) {
     .order('recipe_number')
 
   // Calculate daily nutrients for today
-  const todayDate = today.toISOString().split('T')[0]
+  const todayDate = formatDateLocal(today)
   const todayMeals = (mealPlan || []).filter(
     (m) => m.planned_date === todayDate
   ) as MealPlanEntryWithRecipe[]
@@ -94,11 +94,11 @@ export default async function MealsPage({ searchParams }: MealsPageProps) {
   )
 
   // Format week range for display
-  const weekEndDate = new Date(weekStartDate)
+  const weekEndDate = new Date(currentWeekStart)
   weekEndDate.setDate(weekEndDate.getDate() + 6)
-  const formatDate = (d: Date) =>
+  const formatDateDisplay = (d: Date) =>
     d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  const weekLabel = `${formatDate(new Date(weekStartDate))} - ${formatDate(weekEndDate)}`
+  const weekLabel = `${formatDateDisplay(currentWeekStart)} - ${formatDateDisplay(weekEndDate)}`
 
   return (
     <div className="min-h-screen bg-gray-50">
