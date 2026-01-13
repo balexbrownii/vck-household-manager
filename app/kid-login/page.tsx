@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Star } from 'lucide-react'
+import { LoadingSpinner } from '@/components/ui/shared'
 
 interface Kid {
   id: string
@@ -26,7 +27,7 @@ export default function KidLoginPage() {
       .then(res => res.json())
       .then(data => {
         if (data.authenticated && data.kid) {
-          router.push(`/kid-dashboard`)
+          router.push('/kid-dashboard')
         }
       })
 
@@ -61,8 +62,8 @@ export default function KidLoginPage() {
     setError('')
   }
 
-  const handleLogin = async () => {
-    if (!selectedKid || pin.length !== 4) return
+  const handleLogin = useCallback(async () => {
+    if (!selectedKid || pin.length !== 4 || loggingIn) return
 
     setLoggingIn(true)
     setError('')
@@ -91,35 +92,35 @@ export default function KidLoginPage() {
     } finally {
       setLoggingIn(false)
     }
-  }
+  }, [selectedKid, pin, loggingIn, router])
 
   // Auto-submit when 4 digits entered
   useEffect(() => {
     if (pin.length === 4 && selectedKid) {
       handleLogin()
     }
-  }, [pin])
+  }, [pin, selectedKid, handleLogin])
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-white animate-spin" />
+      <main className="kid-page bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <main className="kid-page bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 no-pull-refresh flex items-center justify-center p-4">
+      <div className="w-full max-w-sm">
         {!selectedKid ? (
           // Kid Selection Screen
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="kid-card animate-fade-in">
             <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-4xl">⭐</span>
+              <div className="w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Star className="w-12 h-12 text-white fill-white" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900">StarKids</h1>
-              <p className="text-gray-600 mt-2">Tap your name to log in</p>
+              <p className="text-gray-500 mt-2">Tap your name to log in</p>
             </div>
 
             <div className="space-y-3">
@@ -128,33 +129,27 @@ export default function KidLoginPage() {
                   key={kid.id}
                   onClick={() => setSelectedKid(kid)}
                   disabled={!kid.pin_hash}
-                  className={`w-full p-4 rounded-xl text-left transition-all ${
-                    kid.pin_hash
-                      ? 'bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border-2 border-transparent hover:border-purple-300'
-                      : 'bg-gray-100 cursor-not-allowed opacity-60'
+                  className={`kid-selector-item ${
+                    !kid.pin_hash ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-white ${
-                      kid.pin_hash ? 'bg-gradient-to-br from-purple-500 to-pink-500' : 'bg-gray-400'
-                    }`}>
-                      {kid.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">{kid.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {kid.pin_hash ? `Age ${kid.age}` : 'PIN not set - ask a parent'}
-                      </div>
+                  <div className="kid-avatar text-xl">
+                    {kid.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="font-semibold text-gray-900 truncate">{kid.name}</div>
+                    <div className="text-sm text-gray-500">
+                      {kid.pin_hash ? `Age ${kid.age}` : 'PIN not set'}
                     </div>
                   </div>
                 </button>
               ))}
             </div>
 
-            <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
               <a
                 href="/login"
-                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                className="text-sm text-purple-600 hover:text-purple-700 font-semibold"
               >
                 Parent Login →
               </a>
@@ -162,77 +157,84 @@ export default function KidLoginPage() {
           </div>
         ) : (
           // PIN Entry Screen
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="kid-card animate-fade-in">
             <button
               onClick={() => {
                 setSelectedKid(null)
                 setPin('')
                 setError('')
               }}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-6 -ml-1 transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Back</span>
             </button>
 
             <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl font-bold text-white">
+              <div className="kid-avatar w-20 h-20 text-2xl mx-auto mb-4">
                 {selectedKid.name.charAt(0)}
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Hi, {selectedKid.name}!</h1>
-              <p className="text-gray-600 mt-2">Enter your 4-digit PIN</p>
+              <p className="text-gray-500 mt-2">Enter your 4-digit PIN</p>
             </div>
 
             {/* PIN Display */}
-            <div className="flex justify-center gap-4 mb-6">
+            <div className="pin-display">
               {[0, 1, 2, 3].map(i => (
                 <div
                   key={i}
-                  className={`w-12 h-12 rounded-full border-2 flex items-center justify-center ${
-                    pin.length > i
-                      ? 'border-purple-500 bg-purple-500'
-                      : 'border-gray-300 bg-white'
-                  }`}
-                >
-                  {pin.length > i && (
-                    <div className="w-3 h-3 bg-white rounded-full" />
-                  )}
-                </div>
+                  className={`pin-dot ${pin.length > i ? 'filled' : ''}`}
+                />
               ))}
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm text-center">
+              <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm text-center">
                 {error}
               </div>
             )}
 
             {/* Number Pad */}
-            <div className="grid grid-cols-3 gap-3">
-              {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map(digit => (
+            <div className="pin-pad">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(digit => (
                 <button
                   key={digit}
-                  onClick={() => {
-                    if (digit === 'C') handlePinClear()
-                    else if (digit === '⌫') handlePinDelete()
-                    else handlePinInput(digit)
-                  }}
+                  onClick={() => handlePinInput(String(digit))}
                   disabled={loggingIn}
-                  className={`h-16 rounded-xl text-2xl font-semibold transition-all ${
-                    digit === 'C' || digit === '⌫'
-                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                  } disabled:opacity-50`}
+                  className="pin-key"
                 >
-                  {loggingIn && digit !== 'C' && digit !== '⌫' ? (
-                    <Loader2 className="w-6 h-6 mx-auto animate-spin" />
-                  ) : (
-                    digit
-                  )}
+                  {digit}
                 </button>
               ))}
+              <button
+                onClick={handlePinClear}
+                disabled={loggingIn}
+                className="pin-key secondary"
+              >
+                Clear
+              </button>
+              <button
+                onClick={() => handlePinInput('0')}
+                disabled={loggingIn}
+                className="pin-key"
+              >
+                0
+              </button>
+              <button
+                onClick={handlePinDelete}
+                disabled={loggingIn}
+                className="pin-key secondary"
+              >
+                ⌫
+              </button>
             </div>
+
+            {loggingIn && (
+              <div className="mt-6 flex justify-center">
+                <LoadingSpinner size="sm" />
+              </div>
+            )}
           </div>
         )}
       </div>

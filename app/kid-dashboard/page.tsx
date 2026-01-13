@@ -8,11 +8,16 @@ import {
   Clock,
   Briefcase,
   LogOut,
-  Loader2,
   ChevronRight,
   Trophy,
-  Camera
+  Camera,
+  Dumbbell,
+  BookOpen,
+  Sparkles,
+  Home,
 } from 'lucide-react'
+import { ExpandableTask } from '@/components/ui/expandable-task'
+import { LoadingSpinner } from '@/components/ui/shared'
 
 interface Kid {
   id: string
@@ -69,7 +74,7 @@ export default function KidDashboardPage() {
       }
 
       setKid(data.kid)
-      await loadDashboardData(data.kid.id)
+      await loadDashboardData(data.kid.id, data.kid.max_gig_tier)
     } catch {
       router.push('/kid-login')
     } finally {
@@ -77,8 +82,7 @@ export default function KidDashboardPage() {
     }
   }
 
-  const loadDashboardData = async (kidId: string) => {
-    // Load expectations, chores, and gigs in parallel
+  const loadDashboardData = async (kidId: string, kidTier: number) => {
     const [expectationsRes, choresRes, gigsRes] = await Promise.all([
       fetch(`/api/expectations?kidId=${kidId}`).catch(() => null),
       fetch(`/api/chores/assignments?kidId=${kidId}`).catch(() => null),
@@ -97,11 +101,36 @@ export default function KidDashboardPage() {
 
     if (gigsRes?.ok) {
       const data = await gigsRes.json()
-      // Filter gigs by kid's tier
-      const kidTier = kid?.max_gig_tier || 1
       setAvailableGigs(
         (data.gigs || []).filter((g: AvailableGig) => g.tier <= kidTier).slice(0, 5)
       )
+    }
+  }
+
+  const handleExpectationComplete = async (type: string, note?: string) => {
+    if (!kid || !expectations) return
+
+    try {
+      await fetch('/api/expectations/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kidId: kid.id,
+          expectationId: expectations.id,
+          type,
+          completed: true,
+          note,
+        }),
+      })
+
+      // Refresh expectations
+      const res = await fetch(`/api/expectations?kidId=${kid.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setExpectations(data.expectation || null)
+      }
+    } catch (error) {
+      console.error('Failed to update expectation:', error)
     }
   }
 
@@ -113,26 +142,25 @@ export default function KidDashboardPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-white animate-spin" />
+      <main className="kid-page bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
       </main>
     )
   }
 
-  if (!kid) {
-    return null
-  }
+  if (!kid) return null
 
   const starsToMilestone = 200 - (kid.total_stars % 200)
   const progressPercent = ((kid.total_stars % 200) / 200) * 100
+  const milestonesEarned = Math.floor(kid.total_stars / 200)
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 p-4">
+    <main className="kid-page bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 no-pull-refresh">
       <div className="max-w-lg mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <header className="kid-header">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-2xl font-bold text-purple-600">
+            <div className="kid-avatar">
               {kid.name.charAt(0)}
             </div>
             <div className="text-white">
@@ -143,93 +171,126 @@ export default function KidDashboardPage() {
           <button
             onClick={handleLogout}
             disabled={loggingOut}
-            className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+            className="p-3 bg-white/20 rounded-full hover:bg-white/30 active:scale-95 transition-all"
+            aria-label="Log out"
           >
             <LogOut className="w-5 h-5 text-white" />
           </button>
-        </div>
+        </header>
 
         {/* Star Progress */}
-        <div className="bg-white rounded-2xl p-6 mb-4 shadow-lg">
+        <section className="kid-section">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
-              <span className="text-2xl font-bold text-gray-900">{kid.total_stars}</span>
-              <span className="text-gray-500">stars</span>
+            <div className="flex items-center gap-3">
+              <Star className="w-7 h-7 text-yellow-500 fill-yellow-500" />
+              <div>
+                <span className="text-3xl font-bold text-gray-900">{kid.total_stars}</span>
+                <span className="text-gray-500 ml-2">stars</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-purple-500" />
-              <span className="text-sm text-gray-600">{starsToMilestone} to $100!</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 rounded-full">
+              <Trophy className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-semibold text-purple-700">
+                {starsToMilestone} to ${(milestonesEarned + 1) * 100}!
+              </span>
             </div>
           </div>
-          <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+
+          <div className="progress-bar h-3">
             <div
-              className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full transition-all"
+              className="progress-fill"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
+
           <p className="text-xs text-gray-500 mt-2 text-center">
             {kid.total_stars % 200} / 200 stars toward next $100 milestone
           </p>
-        </div>
+        </section>
 
         {/* Daily Expectations */}
-        <div className="bg-white rounded-2xl p-6 mb-4 shadow-lg">
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <section className="kid-section">
+          <h2 className="kid-section-title">
             <CheckCircle2 className="w-5 h-5 text-green-500" />
             Today&apos;s Expectations
           </h2>
 
           {expectations ? (
             <div className="space-y-3">
-              <ExpectationItem
-                label="Exercise (20 min)"
-                done={expectations.exercise_complete}
+              <ExpandableTask
+                id="exercise"
+                title="Exercise"
+                subtitle="20 minutes of movement"
+                completed={expectations.exercise_complete}
+                onComplete={(id, note) => handleExpectationComplete('exercise', note)}
+                icon={<Dumbbell className="w-5 h-5 text-orange-500" />}
               />
-              <ExpectationItem
-                label="Reading/Homework (15 min)"
-                done={expectations.reading_complete}
+
+              <ExpandableTask
+                id="reading"
+                title="Reading / Homework"
+                subtitle="15 minutes minimum"
+                completed={expectations.reading_complete}
+                onComplete={(id, note) => handleExpectationComplete('reading', note)}
+                icon={<BookOpen className="w-5 h-5 text-blue-500" />}
               />
-              <ExpectationItem
-                label="Tidy Up"
-                done={expectations.tidy_up_complete}
+
+              <ExpandableTask
+                id="tidy_up"
+                title="Tidy Up"
+                subtitle="Clean your space"
+                completed={expectations.tidy_up_complete}
+                onComplete={(id, note) => handleExpectationComplete('tidy_up', note)}
+                icon={<Sparkles className="w-5 h-5 text-purple-500" />}
               />
-              <ExpectationItem
-                label="Daily Chores"
-                done={expectations.daily_chore_complete}
+
+              <ExpandableTask
+                id="daily_chore"
+                title="Daily Chores"
+                subtitle={choreAssignment ? choreAssignment.assignment : 'Check your chores'}
+                completed={expectations.daily_chore_complete}
+                onComplete={(id, note) => handleExpectationComplete('daily_chore', note)}
+                icon={<Home className="w-5 h-5 text-teal-500" />}
               />
 
               {expectations.all_complete && (
-                <div className="mt-4 p-3 bg-green-100 rounded-lg text-green-700 text-center font-semibold">
-                  🎉 All done! Screen time unlocked!
+                <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl text-center">
+                  <span className="text-2xl mr-2">🎉</span>
+                  <span className="font-semibold text-green-700">
+                    All done! Screen time unlocked!
+                  </span>
                 </div>
               )}
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">Loading expectations...</p>
+            <div className="py-6 text-center">
+              <div className="skeleton h-16 w-full mb-3" />
+              <div className="skeleton h-16 w-full mb-3" />
+              <div className="skeleton h-16 w-full" />
+            </div>
           )}
-        </div>
+        </section>
 
         {/* Today's Chores */}
         {choreAssignment && (
-          <div className="bg-white rounded-2xl p-6 mb-4 shadow-lg">
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <section className="kid-section">
+            <h2 className="kid-section-title">
               <Clock className="w-5 h-5 text-blue-500" />
               My Chores: {choreAssignment.assignment}
             </h2>
             <a
-              href={`/kid-dashboard/chores`}
-              className="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+              href="/kid-dashboard/chores"
+              className="flex items-center justify-between p-4 bg-blue-50 rounded-xl hover:bg-blue-100 active:scale-[0.98] transition-all"
             >
-              <span className="text-blue-700 font-medium">View today&apos;s tasks</span>
+              <span className="text-blue-700 font-semibold">View today&apos;s tasks</span>
               <ChevronRight className="w-5 h-5 text-blue-500" />
             </a>
-          </div>
+          </section>
         )}
 
         {/* Available Gigs */}
-        <div className="bg-white rounded-2xl p-6 mb-4 shadow-lg">
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <section className="kid-section">
+          <h2 className="kid-section-title">
             <Briefcase className="w-5 h-5 text-purple-500" />
             Available Gigs
           </h2>
@@ -240,67 +301,57 @@ export default function KidDashboardPage() {
                 <a
                   key={gig.id}
                   href={`/kid-dashboard/gigs/${gig.id}`}
-                  className="block p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                  className="block p-4 bg-purple-50 rounded-xl hover:bg-purple-100 active:scale-[0.98] transition-all"
                 >
                   <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-gray-900">{gig.title}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">{gig.title}</div>
                       <div className="text-sm text-gray-500">~{gig.estimated_minutes} min</div>
                     </div>
-                    <div className="flex items-center gap-1 bg-yellow-100 px-2 py-1 rounded-full">
-                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                      <span className="font-bold text-yellow-700">{gig.stars}</span>
+                    <div className="star-display ml-3">
+                      <Star className="w-4 h-4 fill-current" />
+                      <span>{gig.stars}</span>
                     </div>
                   </div>
                 </a>
               ))}
+
               <a
                 href="/kid-dashboard/gigs"
-                className="block text-center text-purple-600 font-medium hover:text-purple-700 mt-2"
+                className="block text-center text-purple-600 font-semibold hover:text-purple-700 pt-2"
               >
                 View all gigs →
               </a>
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">Complete your expectations first to claim gigs!</p>
+            <p className="text-gray-500 text-sm text-center py-4">
+              Complete your expectations first to claim gigs!
+            </p>
           )}
-        </div>
+        </section>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="quick-actions">
           <a
             href="/kid-dashboard/submit"
-            className="bg-white rounded-2xl p-4 shadow-lg flex flex-col items-center gap-2 hover:scale-105 transition-transform"
+            className="quick-action"
           >
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+            <div className="quick-action-icon bg-green-100">
               <Camera className="w-6 h-6 text-green-600" />
             </div>
-            <span className="font-medium text-gray-900 text-sm">Submit Work</span>
+            <span className="quick-action-label">Submit Work</span>
           </a>
           <a
             href="/kid-dashboard/my-stars"
-            className="bg-white rounded-2xl p-4 shadow-lg flex flex-col items-center gap-2 hover:scale-105 transition-transform"
+            className="quick-action"
           >
-            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+            <div className="quick-action-icon bg-yellow-100">
               <Star className="w-6 h-6 text-yellow-600 fill-yellow-600" />
             </div>
-            <span className="font-medium text-gray-900 text-sm">My Stars</span>
+            <span className="quick-action-label">My Stars</span>
           </a>
         </div>
       </div>
     </main>
-  )
-}
-
-function ExpectationItem({ label, done }: { label: string; done: boolean }) {
-  return (
-    <div className={`flex items-center gap-3 p-3 rounded-lg ${done ? 'bg-green-50' : 'bg-gray-50'}`}>
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-        done ? 'bg-green-500' : 'border-2 border-gray-300'
-      }`}>
-        {done && <CheckCircle2 className="w-4 h-4 text-white" />}
-      </div>
-      <span className={done ? 'text-green-700 line-through' : 'text-gray-700'}>{label}</span>
-    </div>
   )
 }

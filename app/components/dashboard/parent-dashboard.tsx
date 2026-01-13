@@ -3,6 +3,7 @@ import { Kid, DailyExpectation } from '@/types'
 import KidCard from './kid-card'
 import WeekSelector from './week-selector'
 import { redirect } from 'next/navigation'
+import { Briefcase, Settings, AlertTriangle, BarChart3, FileText } from 'lucide-react'
 
 export default async function ParentDashboard() {
   const supabase = await createClient()
@@ -144,19 +145,21 @@ export default async function ParentDashboard() {
     }
   })
 
+  // Format today's date nicely
+  const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' }
+  const formattedDate = new Date().toLocaleDateString('en-US', dateOptions)
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Dashboard Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Family Dashboard</h1>
-            <p className="text-gray-600 mt-2">
-              {today} • {kids.length} {kids.length === 1 ? 'child' : 'children'}
-            </p>
-          </div>
-          <WeekSelector currentWeek={currentWeek} />
+      <div className="dashboard-header">
+        <div>
+          <h1 className="dashboard-title">Family Dashboard</h1>
+          <p className="dashboard-subtitle">
+            {formattedDate}
+          </p>
         </div>
+        <WeekSelector currentWeek={currentWeek} />
       </div>
 
       {/* Kid Cards Grid */}
@@ -174,49 +177,43 @@ export default async function ParentDashboard() {
         ))}
       </div>
 
-      {/* Quick Stats Footer */}
-      <div className="mt-12 pt-6 border-t border-gray-200">
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {kidExpectations.map(({ kid, expectation }) => (
-            <div key={kid.id} className="text-center">
-              <div className="text-2xl font-bold text-primary">
-                {expectation.all_complete ? '✓' : '○'}
-              </div>
-              <div className="text-sm text-gray-600">{kid.name}</div>
+      {/* Quick Stats */}
+      <div className="quick-stats">
+        {kidExpectations.map(({ kid, expectation }) => (
+          <div key={kid.id} className="stat-card">
+            <div className="stat-value">
+              {expectation.all_complete ? (
+                <span className="text-green-500">✓</span>
+              ) : (
+                <span className="text-gray-300">○</span>
+              )}
             </div>
-          ))}
-        </div>
+            <div className="stat-label">{kid.name}</div>
+          </div>
+        ))}
+      </div>
 
-        {/* Admin Actions */}
-        <div className="flex gap-4 justify-center flex-wrap">
-          <a
-            href="/gigs"
-            className="px-6 py-3 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-colors"
-          >
-            Browse All Gigs
+      {/* Admin Actions */}
+      <div className="pt-6 border-t border-gray-200">
+        <div className="action-buttons">
+          <a href="/gigs" className="action-btn action-btn-blue">
+            <Briefcase className="w-4 h-4" />
+            Browse Gigs
           </a>
-          <a
-            href="/gigs/inspect"
-            className="px-6 py-3 bg-green-100 text-green-700 rounded-lg font-semibold hover:bg-green-200 transition-colors"
-          >
+          <a href="/gigs/inspect" className="action-btn action-btn-green">
+            <Settings className="w-4 h-4" />
             Inspect Gigs
           </a>
-          <a
-            href="/timeout"
-            className="px-6 py-3 bg-red-100 text-red-700 rounded-lg font-semibold hover:bg-red-200 transition-colors"
-          >
-            Timeout Management
+          <a href="/timeout" className="action-btn action-btn-red">
+            <AlertTriangle className="w-4 h-4" />
+            Timeouts
           </a>
-          <a
-            href="/analytics"
-            className="px-6 py-3 bg-purple-100 text-purple-700 rounded-lg font-semibold hover:bg-purple-200 transition-colors"
-          >
+          <a href="/analytics" className="action-btn action-btn-purple">
+            <BarChart3 className="w-4 h-4" />
             Analytics
           </a>
-          <a
-            href="/charts"
-            className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
-          >
+          <a href="/charts" className="action-btn action-btn-gray">
+            <FileText className="w-4 h-4" />
             Print Charts
           </a>
         </div>

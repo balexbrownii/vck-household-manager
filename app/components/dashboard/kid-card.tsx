@@ -5,6 +5,7 @@ import DailyChecklist from './daily-checklist'
 import ScreenTimeStatus from './screen-time-status'
 import StarTracker from './star-tracker'
 import Link from 'next/link'
+import { ChevronRight, Star } from 'lucide-react'
 
 interface PendingTimeout {
   id: string
@@ -31,24 +32,32 @@ export default function KidCard({
   pendingTimeout,
 }: KidCardProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-      {/* Header with kid name and age */}
-      <div className="mb-6">
-        <div className="flex items-baseline gap-2 mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">{kid.name}</h2>
-          <span className="text-sm text-gray-500">age {kid.age}</span>
+    <div className="parent-kid-card">
+      {/* Header with avatar, name, and screen time status */}
+      <div className="flex items-start justify-between mb-5">
+        <div className="flex items-center gap-4">
+          <div className="parent-kid-avatar">
+            {kid.name.charAt(0)}
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">{kid.name}</h2>
+            <p className="text-sm text-gray-500">Age {kid.age}</p>
+          </div>
         </div>
-
-        {/* Screen time status indicator */}
         <ScreenTimeStatus
           allExpectationsComplete={expectations.all_complete}
         />
       </div>
 
+      {/* Star Tracker */}
+      <div className="mb-5">
+        <StarTracker kid={kid} />
+      </div>
+
       {/* Daily expectations checklist */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">
-          Today's Expectations
+      <div className="mb-5">
+        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+          Today&apos;s Expectations
         </h3>
         <DailyChecklist
           kidId={kid.id}
@@ -61,20 +70,22 @@ export default function KidCard({
         />
       </div>
 
-      {/* Star tracker */}
-      <div className="mb-6 pt-4 border-t border-gray-100">
-        <StarTracker kid={kid} />
-      </div>
-
-      {/* Quick links */}
-      <div className="pt-4 border-t border-gray-100 space-y-2">
-        <Link
-          href={`/kid/${kid.id}/gigs`}
-          className="block text-center py-2 px-3 bg-blue-50 text-blue-600 rounded font-medium hover:bg-blue-100 transition-colors text-sm"
-        >
-          View Gigs
-        </Link>
-      </div>
+      {/* Quick link to gigs */}
+      <Link
+        href={`/kid/${kid.id}/gigs`}
+        className="flex items-center justify-between p-3 -mx-1 rounded-xl hover:bg-gray-50 transition-colors group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+            <Star className="w-5 h-5 text-purple-600" />
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900">View Gigs</div>
+            <div className="text-sm text-gray-500">{kid.total_stars} stars earned</div>
+          </div>
+        </div>
+        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+      </Link>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/app/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(
   request: NextRequest,
@@ -86,44 +86,71 @@ export async function POST(
 
     // If approved and it's a gig, award stars
     if (action === 'approve' && photo.entity_type === 'gig') {
-      // Get gig details
+      // Get gig details and claimed_gig record
       const { data: gig } = await supabase
         .from('gigs')
         .select('stars, title')
         .eq('id', photo.entity_id)
         .single()
 
-      if (gig) {
-        // Update kid's total stars
-        await supabase.rpc('increment_kid_stars', {
-          kid_id_param: photo.kid_id,
-          stars_to_add: gig.stars,
-        })
+      const { data: claimedGig } = await supabase
+        .from('claimed_gigs')
+        .select('id')
+        .eq('gig_id', photo.entity_id)
+        .eq('kid_id', photo.kid_id)
+        .single()
 
-        // Add to star ledger
-        await supabase.from('star_ledger').insert({
-          kid_id: photo.kid_id,
-          stars: gig.stars,
-          reason: `Completed gig: ${gig.title}`,
-          source_type: 'gig',
-          source_id: photo.entity_id,
-        })
+      if (gig && claimedGig) {
+        // Get current kid stars for balance_after calculation
+        const { data: kid } = await supabase
+          .from('kids')
+          .select('total_stars')
+          .eq('id', photo.kid_id)
+          .single()
 
-        // Update gig status to completed
-        await supabase
-          .from('gigs')
-          .update({ status: 'completed' })
-          .eq('id', photo.entity_id)
+        const currentStars = kid?.total_stars || 0
+        const newBalance = currentStars + gig.stars
 
-        // Update gig assignment
-        await supabase
-          .from('gig_assignments')
-          .update({
-            status: 'completed',
-            completed_at: new Date().toISOString(),
+        // Update kid's total stars directly
+        const { error: starsError } = await supabase
+          .from('kids')
+          .update({ total_stars: newBalance })
+          .eq('id', photo.kid_id)
+
+        if (starsError) {
+          console.error('Stars update error:', starsError)
+        }
+
+        // Add to star_history (correct table name)
+        const { error: historyError } = await supabase
+          .from('star_history')
+          .insert({
+            kid_id: photo.kid_id,
+            claimed_gig_id: claimedGig.id,
+            stars_earned: gig.stars,
+            reason: `Completed gig: ${gig.title}`,
+            balance_after: newBalance,
           })
-          .eq('gig_id', photo.entity_id)
-          .eq('kid_id', photo.kid_id)
+
+        if (historyError) {
+          console.error('Star history error:', historyError)
+        }
+
+        // Update claimed_gigs (correct table name)
+        const { error: claimError } = await supabase
+          .from('claimed_gigs')
+          .update({
+            inspection_status: 'approved',
+            inspected_by: user.id,
+            inspected_at: new Date().toISOString(),
+            completed_at: new Date().toISOString(),
+            stars_awarded: gig.stars,
+          })
+          .eq('id', claimedGig.id)
+
+        if (claimError) {
+          console.error('Claimed gig update error:', claimError)
+        }
       }
     }
 

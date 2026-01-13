@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/app/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
@@ -47,14 +47,18 @@ export async function POST(
       )
     }
 
-    const kid = session.kids as { id: string; max_gig_tier: number }
-    const kidId = kid.id
-    const kidTier = kid.max_gig_tier || 1
+    // session.kids is the related record (singular due to foreign key)
+    const kids = session.kids as unknown as { id: string; max_gig_tier: number } | null
+    if (!kids) {
+      return NextResponse.json({ error: 'Kid not found' }, { status: 404 })
+    }
+    const kidId = kids.id
+    const kidTier = kids.max_gig_tier || 1
 
     // Fetch the gig
     const { data: gig, error: gigError } = await supabase
       .from('gigs')
-      .select('id, tier, status, claimed_by')
+      .select('id, tier, active')
       .eq('id', gigId)
       .single()
 
@@ -65,10 +69,10 @@ export async function POST(
       )
     }
 
-    // Check if already claimed
-    if (gig.claimed_by) {
+    // Check if gig is active
+    if (!gig.active) {
       return NextResponse.json(
-        { error: 'This gig has already been claimed' },
+        { error: 'This gig is no longer available' },
         { status: 400 }
       )
     }
@@ -81,50 +85,50 @@ export async function POST(
       )
     }
 
-    // Check if gig is available
-    if (gig.status !== 'available') {
+    // Check if already claimed by anyone (not completed)
+    const { data: existingClaim } = await supabase
+      .from('claimed_gigs')
+      .select('id, kid_id')
+      .eq('gig_id', gigId)
+      .is('completed_at', null)
+      .single()
+
+    if (existingClaim) {
+      if (existingClaim.kid_id === kidId) {
+        return NextResponse.json(
+          { error: 'You have already claimed this gig' },
+          { status: 400 }
+        )
+      }
       return NextResponse.json(
-        { error: 'This gig is no longer available' },
+        { error: 'This gig has already been claimed by someone else' },
         { status: 400 }
       )
     }
 
-    // Claim the gig - update gig status and create assignment
-    const { error: updateError } = await supabase
-      .from('gigs')
-      .update({
-        status: 'claimed',
-        claimed_by: kidId,
+    // Create claimed_gigs record
+    const { data: claimedGig, error: claimError } = await supabase
+      .from('claimed_gigs')
+      .insert({
+        gig_id: gigId,
+        kid_id: kidId,
         claimed_at: new Date().toISOString(),
       })
-      .eq('id', gigId)
+      .select()
+      .single()
 
-    if (updateError) {
-      console.error('Claim update error:', updateError)
+    if (claimError) {
+      console.error('Claim error:', claimError)
       return NextResponse.json(
         { error: 'Failed to claim gig' },
         { status: 500 }
       )
     }
 
-    // Create gig assignment record
-    const { error: assignmentError } = await supabase
-      .from('gig_assignments')
-      .insert({
-        gig_id: gigId,
-        kid_id: kidId,
-        status: 'in_progress',
-        claimed_at: new Date().toISOString(),
-      })
-
-    if (assignmentError) {
-      console.error('Assignment creation error:', assignmentError)
-      // Don't fail the request, the gig is already claimed
-    }
-
     return NextResponse.json({
       success: true,
       message: 'Gig claimed successfully!',
+      claimedGigId: claimedGig.id,
     })
   } catch (error) {
     console.error('Claim gig error:', error)

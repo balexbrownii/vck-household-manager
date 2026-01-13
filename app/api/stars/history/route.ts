@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/app/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,12 +15,12 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Get star history for this kid
+    // Get star history for this kid (using correct table name: star_history)
     const { data: entries, error } = await supabase
-      .from('star_ledger')
-      .select('id, stars, reason, source_type, created_at')
+      .from('star_history')
+      .select('id, stars_earned, reason, balance_after, created_at')
       .eq('kid_id', kidId)
-      .gt('stars', 0) // Only show positive entries (earned stars)
+      .gt('stars_earned', 0) // Only show positive entries (earned stars)
       .order('created_at', { ascending: false })
       .limit(50)
 
@@ -32,7 +32,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ entries: entries || [] })
+    // Map to expected format
+    const formattedEntries = entries?.map(e => ({
+      id: e.id,
+      stars: e.stars_earned,
+      reason: e.reason,
+      balance_after: e.balance_after,
+      created_at: e.created_at,
+    })) || []
+
+    return NextResponse.json({ entries: formattedEntries })
   } catch (error) {
     console.error('Star history API error:', error)
     return NextResponse.json(

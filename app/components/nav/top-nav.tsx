@@ -2,7 +2,17 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Zap, AlertTriangle, BarChart3, FileText, Settings, ClipboardList, UtensilsCrossed } from 'lucide-react'
+import {
+  Home,
+  Zap,
+  AlertTriangle,
+  BarChart3,
+  FileText,
+  Settings,
+  ClipboardList,
+  UtensilsCrossed,
+  Star
+} from 'lucide-react'
 
 export default function TopNav() {
   const pathname = usePathname()
@@ -16,34 +26,41 @@ export default function TopNav() {
     { href: '/meals', label: 'Meals', icon: UtensilsCrossed },
     { href: '/screen-time', label: 'Screen Time', icon: Zap },
     { href: '/timeout', label: 'Timeouts', icon: AlertTriangle },
-    { href: '/gigs/inspect', label: 'Inspect Gigs', icon: Settings },
+    { href: '/gigs/inspect', label: 'Inspect', icon: Settings },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/charts', label: 'Charts', icon: FileText },
   ]
 
   return (
-    <nav className="bg-white border-b-2 border-gray-200 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between gap-1 overflow-x-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const active = isActive(item.href)
+    <nav className="parent-nav">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between h-14">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
+              <Star className="w-5 h-5 text-white fill-white" />
+            </div>
+            <span className="font-bold text-gray-900 hidden sm:block">StarKids</span>
+          </Link>
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-colors ${
-                  active
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{item.label}</span>
-              </Link>
-            )
-          })}
+          {/* Navigation Links */}
+          <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
+            {navItems.map((item) => {
+              const Icon = item.icon
+              const active = isActive(item.href)
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`nav-link ${active ? 'active' : ''}`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden md:inline">{item.label}</span>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       </div>
     </nav>

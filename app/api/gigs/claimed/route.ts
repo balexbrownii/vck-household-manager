@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/app/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,13 +15,13 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Get gigs that are claimed by this kid but not yet completed
-    const { data: gigs, error } = await supabase
-      .from('gig_assignments')
+    // Get gigs claimed by this kid that are not yet completed
+    const { data: claimedGigs, error } = await supabase
+      .from('claimed_gigs')
       .select(`
         id,
-        status,
         claimed_at,
+        inspection_status,
         gigs (
           id,
           title,
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('kid_id', kidId)
-      .eq('status', 'in_progress')
+      .is('completed_at', null)
       .order('claimed_at', { ascending: false })
 
     if (error) {
@@ -43,19 +43,34 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Flatten the response
-    const claimedGigs = gigs?.map(assignment => ({
-      assignmentId: assignment.id,
-      id: (assignment.gigs as { id: string }).id,
-      title: (assignment.gigs as { title: string }).title,
-      description: (assignment.gigs as { description: string }).description,
-      stars: (assignment.gigs as { stars: number }).stars,
-      tier: (assignment.gigs as { tier: number }).tier,
-      estimatedMinutes: (assignment.gigs as { estimated_minutes: number }).estimated_minutes,
-      claimedAt: assignment.claimed_at,
-    })) || []
+    // Define gig type for clarity
+    interface ClaimedGigData {
+      id: string
+      title: string
+      description: string
+      stars: number
+      tier: number
+      estimated_minutes: number
+    }
 
-    return NextResponse.json({ gigs: claimedGigs })
+    // Flatten the response
+    const gigs = claimedGigs?.map(claim => {
+      const gigData = claim.gigs as unknown as ClaimedGigData | null
+      if (!gigData) return null
+      return {
+        claimId: claim.id,
+        id: gigData.id,
+        title: gigData.title,
+        description: gigData.description,
+        stars: gigData.stars,
+        tier: gigData.tier,
+        estimatedMinutes: gigData.estimated_minutes,
+        claimedAt: claim.claimed_at,
+        inspectionStatus: claim.inspection_status,
+      }
+    }).filter(Boolean) || []
+
+    return NextResponse.json({ gigs })
   } catch (error) {
     console.error('Claimed gigs API error:', error)
     return NextResponse.json(
