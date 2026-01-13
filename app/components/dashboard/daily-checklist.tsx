@@ -9,6 +9,8 @@ interface PendingTimeout {
   timeout_minutes: number
   violation_type: string
   reset_count: number
+  serving_started_at: string | null
+  served_at: string | null
 }
 
 interface DailyChecklistProps {
@@ -67,6 +69,8 @@ export default function DailyChecklist({
           timeoutMinutes={pendingTimeout.timeout_minutes}
           violationType={pendingTimeout.violation_type}
           resetCount={pendingTimeout.reset_count}
+          servingStartedAt={pendingTimeout.serving_started_at}
+          servedAt={pendingTimeout.served_at}
         />
       )}
 

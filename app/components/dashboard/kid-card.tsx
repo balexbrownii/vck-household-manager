@@ -12,6 +12,8 @@ interface PendingTimeout {
   timeout_minutes: number
   violation_type: string
   reset_count: number
+  serving_started_at: string | null
+  served_at: string | null
 }
 
 interface KidCardProps {

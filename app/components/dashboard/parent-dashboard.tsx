@@ -94,13 +94,22 @@ export default async function ParentDashboard() {
     .is('completed_at', null)
 
   // Create a map of pending timeouts by kid_id
-  const timeoutMap = new Map<string, { id: string; timeout_minutes: number; violation_type: string; reset_count: number }>()
+  const timeoutMap = new Map<string, {
+    id: string
+    timeout_minutes: number
+    violation_type: string
+    reset_count: number
+    serving_started_at: string | null
+    served_at: string | null
+  }>()
   pendingTimeouts?.forEach((timeout) => {
     timeoutMap.set(timeout.kid_id, {
       id: timeout.id,
       timeout_minutes: timeout.timeout_minutes,
       violation_type: timeout.violation_type,
       reset_count: timeout.reset_count,
+      serving_started_at: timeout.serving_started_at,
+      served_at: timeout.served_at,
     })
   })
 
