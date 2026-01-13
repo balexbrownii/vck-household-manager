@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation'
 import {
   Camera,
   ArrowLeft,
-  Loader2,
   CheckCircle2,
   Upload,
   X,
   Briefcase,
   Clock,
   Star,
+  Loader2,
 } from 'lucide-react'
+import { LoadingSpinner } from '@/components/ui/shared'
 
 interface Kid {
   id: string
@@ -187,16 +188,16 @@ export default function SubmitWorkPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-white animate-spin" />
+      <main className="kid-page bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
       </main>
     )
   }
 
   if (success) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-8 shadow-xl text-center max-w-md">
+      <main className="kid-page bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 shadow-xl text-center max-w-md mx-4">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-10 h-10 text-green-600" />
           </div>
@@ -210,7 +211,7 @@ export default function SubmitWorkPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 p-4">
+    <main className="kid-page bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 no-pull-refresh">
       <div className="max-w-lg mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">

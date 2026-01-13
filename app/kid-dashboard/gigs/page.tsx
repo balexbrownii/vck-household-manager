@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation'
 import {
   Briefcase,
   ArrowLeft,
-  Loader2,
   Star,
   Clock,
   ChevronRight,
   Filter,
 } from 'lucide-react'
+import { LoadingSpinner } from '@/components/ui/shared'
 
 interface Kid {
   id: string
@@ -78,8 +78,8 @@ export default function GigsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-white animate-spin" />
+      <main className="kid-page bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
       </main>
     )
   }
@@ -87,7 +87,7 @@ export default function GigsPage() {
   if (!kid) return null
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 p-4">
+    <main className="kid-page bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 no-pull-refresh">
       <div className="max-w-lg mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">

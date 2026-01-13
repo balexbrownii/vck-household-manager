@@ -51,16 +51,18 @@ export default async function TimeoutPage() {
   return (
     <>
       <TopNav />
-      <main className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-2">
-            <AlertTriangle className="w-8 h-8 text-red-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Timeout Management</h1>
+      <main className="parent-page">
+        <div className="parent-content">
+          {/* Header */}
+          <div className="dashboard-header mb-8">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-8 h-8 text-red-600" />
+              <div>
+                <h1 className="dashboard-title">Timeout Management</h1>
+                <p className="dashboard-subtitle">Immediate violation logging and timeout tracking</p>
+              </div>
+            </div>
           </div>
-          <p className="text-gray-600">Immediate violation logging and timeout tracking</p>
-        </div>
 
         {/* Active Timeouts */}
         {activeTimeouts && activeTimeouts.length > 0 && (
@@ -100,19 +102,19 @@ export default async function TimeoutPage() {
           </div>
         </div>
 
-        {/* History & Patterns */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Timeout History & Patterns</h2>
-          <div className="grid grid-cols-1 gap-6">
-            {kids.map((kid) => (
-              <div key={kid.id}>
-                <TimeoutHistory kidId={kid.id} kidName={kid.name} />
-              </div>
-            ))}
+          {/* History & Patterns */}
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Timeout History & Patterns</h2>
+            <div className="grid grid-cols-1 gap-6">
+              {kids.map((kid) => (
+                <div key={kid.id}>
+                  <TimeoutHistory kidId={kid.id} kidName={kid.name} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
     </>
   )
 }

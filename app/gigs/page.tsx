@@ -58,15 +58,17 @@ export default async function GigsPage() {
   return (
     <>
       <TopNav />
-      <main className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+      <main className="parent-page">
+        <div className="parent-content">
           {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-3xl font-bold text-gray-900">Available Gigs</h1>
-          <p className="text-gray-600 mt-2">
-            Earn stars by completing tasks and projects
-          </p>
-        </div>
+          <div className="dashboard-header mb-8">
+            <div>
+              <h1 className="dashboard-title">Available Gigs</h1>
+              <p className="dashboard-subtitle">
+                Earn stars by completing tasks and projects
+              </p>
+            </div>
+          </div>
 
         {/* Gigs by tier */}
         <div className="space-y-12">
@@ -93,26 +95,26 @@ export default async function GigsPage() {
           })}
         </div>
 
-        {/* Info section */}
-        <div className="mt-16 bg-blue-50 border border-blue-200 rounded-lg p-8">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">How it works:</h3>
-          <ul className="space-y-3 text-gray-700">
-            <li>
-              <strong>1. Claim a gig:</strong> Kids select a gig and start working
-            </li>
-            <li>
-              <strong>2. Complete the work:</strong> Follow the checklist items
-            </li>
-            <li>
-              <strong>3. Request inspection:</strong> Parent reviews and approves
-            </li>
-            <li>
-              <strong>4. Earn stars:</strong> Stars go toward $100 milestones
-            </li>
-            <li>
-              <strong>One gig at a time:</strong> Must finish or abandon before claiming another
-            </li>
-          </ul>
+          {/* Info section */}
+          <div className="mt-12 bg-blue-50 border border-blue-200 rounded-2xl p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">How it works:</h3>
+            <ul className="space-y-3 text-gray-700">
+              <li>
+                <strong>1. Claim a gig:</strong> Kids select a gig and start working
+              </li>
+              <li>
+                <strong>2. Complete the work:</strong> Follow the checklist items
+              </li>
+              <li>
+                <strong>3. Request inspection:</strong> Parent reviews and approves
+              </li>
+              <li>
+                <strong>4. Earn stars:</strong> Stars go toward $100 milestones
+              </li>
+              <li>
+                <strong>One gig at a time:</strong> Must finish or abandon before claiming another
+              </li>
+            </ul>
           </div>
         </div>
       </main>

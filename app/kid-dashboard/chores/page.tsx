@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
-  Loader2,
   CheckCircle2,
   Circle,
   Clock,
   Camera,
 } from 'lucide-react'
+import { LoadingSpinner } from '@/components/ui/shared'
 
 interface Kid {
   id: string
@@ -78,8 +78,8 @@ export default function ChoresPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-teal-500 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-white animate-spin" />
+      <main className="kid-page bg-gradient-to-br from-blue-400 via-cyan-500 to-teal-500 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
       </main>
     )
   }
@@ -91,7 +91,7 @@ export default function ChoresPage() {
   const allDone = totalCount > 0 && completedCount === totalCount
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-400 via-cyan-500 to-teal-500 p-4">
+    <main className="kid-page bg-gradient-to-br from-blue-400 via-cyan-500 to-teal-500 no-pull-refresh">
       <div className="max-w-lg mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
