@@ -3,6 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
+// Rate limiting configuration
+const MAX_ATTEMPTS = 5 // Max failed attempts before lockout
+const LOCKOUT_MINUTES = 5 // Lockout duration in minutes
+
 // Simple hash function for PIN (in production, use bcrypt)
 function hashPin(pin: string): string {
   return crypto.createHash('sha256').update(pin).digest('hex')
@@ -10,6 +14,19 @@ function hashPin(pin: string): string {
 
 function generateSessionToken(): string {
   return crypto.randomBytes(32).toString('hex')
+}
+
+function getClientIP(request: NextRequest): string {
+  // Try various headers for IP address
+  const forwardedFor = request.headers.get('x-forwarded-for')
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim()
+  }
+  const realIP = request.headers.get('x-real-ip')
+  if (realIP) {
+    return realIP
+  }
+  return 'unknown'
 }
 
 export async function POST(request: NextRequest) {
@@ -32,6 +49,34 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient()
+    const ipAddress = getClientIP(request)
+    const lockoutWindow = new Date(Date.now() - LOCKOUT_MINUTES * 60 * 1000).toISOString()
+
+    // Check rate limiting - count recent failed attempts for this kid
+    const { count: failedAttempts } = await supabase
+      .from('login_attempts')
+      .select('*', { count: 'exact', head: true })
+      .eq('kid_id', kidId)
+      .eq('success', false)
+      .gte('attempted_at', lockoutWindow)
+
+    if (failedAttempts !== null && failedAttempts >= MAX_ATTEMPTS) {
+      // Also log this blocked attempt
+      await supabase.from('login_attempts').insert({
+        kid_id: kidId,
+        ip_address: ipAddress,
+        success: false,
+      })
+
+      return NextResponse.json(
+        {
+          error: `Too many failed attempts. Please wait ${LOCKOUT_MINUTES} minutes before trying again.`,
+          locked: true,
+          lockoutMinutes: LOCKOUT_MINUTES,
+        },
+        { status: 429 }
+      )
+    }
 
     // Get kid and verify PIN
     const { data: kid, error: kidError } = await supabase
@@ -41,6 +86,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (kidError || !kid) {
+      // Log failed attempt (invalid kid)
+      await supabase.from('login_attempts').insert({
+        kid_id: kidId,
+        ip_address: ipAddress,
+        success: false,
+      })
+
       return NextResponse.json(
         { error: 'Kid not found' },
         { status: 404 }
@@ -58,11 +110,31 @@ export async function POST(request: NextRequest) {
     // Verify PIN
     const pinHash = hashPin(pin)
     if (pinHash !== kid.pin_hash) {
+      // Log failed attempt
+      await supabase.from('login_attempts').insert({
+        kid_id: kidId,
+        ip_address: ipAddress,
+        success: false,
+      })
+
+      // Calculate remaining attempts
+      const remainingAttempts = MAX_ATTEMPTS - (failedAttempts || 0) - 1
+
       return NextResponse.json(
-        { error: 'Incorrect PIN' },
+        {
+          error: 'Incorrect PIN',
+          remainingAttempts: Math.max(0, remainingAttempts),
+        },
         { status: 401 }
       )
     }
+
+    // Log successful attempt
+    await supabase.from('login_attempts').insert({
+      kid_id: kidId,
+      ip_address: ipAddress,
+      success: true,
+    })
 
     // Generate session token
     const sessionToken = generateSessionToken()
