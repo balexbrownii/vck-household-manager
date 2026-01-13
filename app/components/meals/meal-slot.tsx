@@ -22,7 +22,9 @@ export default function MealSlot({ entry, onClick, onRemove }: MealSlotProps) {
   }
 
   const recipe = entry.recipes
-  const hasWarning = !!recipe.alex_modifications || !!recipe.alexander_notes
+  const hasAlexMods = !!recipe.alex_modifications
+  const hasAlexanderNotes = !!recipe.alexander_notes
+  const hasWarning = hasAlexMods || hasAlexanderNotes
 
   return (
     <div
@@ -45,7 +47,14 @@ export default function MealSlot({ entry, onClick, onRemove }: MealSlotProps) {
           )}
         </div>
         {hasWarning && (
-          <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+          <div className="flex-shrink-0 relative group/warning">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <div className="absolute right-0 top-5 z-10 hidden group-hover/warning:block w-48 p-2 bg-amber-50 border border-amber-200 rounded-lg shadow-lg text-xs text-amber-800">
+              <div className="font-medium mb-1">Family Notes:</div>
+              {hasAlexMods && <div>Alex: {recipe.alex_modifications}</div>}
+              {hasAlexanderNotes && <div>Alexander: {recipe.alexander_notes}</div>}
+            </div>
+          </div>
         )}
       </div>
 
