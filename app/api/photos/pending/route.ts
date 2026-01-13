@@ -40,6 +40,11 @@ export async function GET() {
         notes,
         status,
         uploaded_at,
+        ai_passed,
+        ai_feedback,
+        ai_confidence,
+        escalated_to_parent,
+        submission_attempt,
         kids (
           id,
           name

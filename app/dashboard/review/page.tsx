@@ -13,6 +13,9 @@ import {
   User,
   Clock,
   Briefcase,
+  Sparkles,
+  Hand,
+  RefreshCw,
 } from 'lucide-react'
 
 interface Kid {
@@ -30,6 +33,12 @@ interface Submission {
   uploaded_at: string
   photoUrl: string
   kids: Kid
+  // AI fields
+  ai_passed: boolean | null
+  ai_feedback: string | null
+  ai_confidence: number | null
+  escalated_to_parent: boolean
+  submission_attempt: number
   entityDetails: {
     title?: string
     name?: string
@@ -150,6 +159,30 @@ export default function ReviewPage() {
                     alt="Submission"
                     className="w-full h-full object-cover"
                   />
+                  {/* Badges */}
+                  <div className="absolute top-2 left-2 flex flex-col gap-1">
+                    {/* AI Passed Badge */}
+                    {submission.ai_passed && (
+                      <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">
+                        <Sparkles className="w-3 h-3" />
+                        AI Passed
+                      </div>
+                    )}
+                    {/* Escalated Badge */}
+                    {submission.escalated_to_parent && (
+                      <div className="flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-medium">
+                        <Hand className="w-3 h-3" />
+                        Kid Request
+                      </div>
+                    )}
+                    {/* Resubmission Badge */}
+                    {submission.submission_attempt > 1 && (
+                      <div className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
+                        <RefreshCw className="w-3 h-3" />
+                        Attempt #{submission.submission_attempt}
+                      </div>
+                    )}
+                  </div>
                   <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium ${
                     submission.entity_type === 'gig'
                       ? 'bg-purple-100 text-purple-700'
@@ -256,12 +289,55 @@ export default function ReviewPage() {
                   </div>
                 )}
 
+                {/* AI Review Info */}
+                {(selectedSubmission.ai_passed !== null || selectedSubmission.escalated_to_parent) && (
+                  <div className={`rounded-lg p-4 mb-4 ${
+                    selectedSubmission.ai_passed
+                      ? 'bg-green-50 border border-green-200'
+                      : selectedSubmission.escalated_to_parent
+                      ? 'bg-orange-50 border border-orange-200'
+                      : 'bg-gray-50 border border-gray-200'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      {selectedSubmission.ai_passed ? (
+                        <Sparkles className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      ) : selectedSubmission.escalated_to_parent ? (
+                        <Hand className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <Sparkles className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
+                      )}
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900 text-sm mb-1">
+                          {selectedSubmission.ai_passed
+                            ? 'AI Review: Passed'
+                            : selectedSubmission.escalated_to_parent
+                            ? 'Kid requested direct parent review'
+                            : 'AI Review Skipped'}
+                          {selectedSubmission.ai_confidence && (
+                            <span className="text-gray-500 font-normal ml-2">
+                              ({Math.round(selectedSubmission.ai_confidence * 100)}% confidence)
+                            </span>
+                          )}
+                        </div>
+                        {selectedSubmission.ai_feedback && (
+                          <p className="text-sm text-gray-600">{selectedSubmission.ai_feedback}</p>
+                        )}
+                        {selectedSubmission.submission_attempt > 1 && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            This is submission attempt #{selectedSubmission.submission_attempt}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Kid's Notes */}
                 {selectedSubmission.notes && (
                   <div className="bg-gray-50 rounded-lg p-4 mb-4">
                     <div className="flex items-center gap-2 text-gray-600 mb-2">
                       <MessageSquare className="w-4 h-4" />
-                      <span className="text-sm font-medium">Note from {selectedSubmission.kids.name}:</span>
+                      <span className="text-sm font-medium">What {selectedSubmission.kids.name} says they did:</span>
                     </div>
                     <p className="text-gray-700">{selectedSubmission.notes}</p>
                   </div>

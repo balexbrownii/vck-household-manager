@@ -38,3 +38,4 @@ yarn-error.log*
 *.swp
 *.swo
 .env*.local
+tsconfig.tsbuildinfo

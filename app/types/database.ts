@@ -53,6 +53,10 @@ export interface ChoreRoom {
   day_of_week: number
   room_name: string
   checklist: string[]
+  // AI Review fields
+  scope_description: string | null
+  completion_criteria: string | null
+  ai_review_enabled: boolean
   created_at: string
 }
 
@@ -79,6 +83,10 @@ export interface Gig {
   estimated_minutes: number | null
   checklist: string[]
   active: boolean
+  // AI Review fields
+  scope_description: string | null
+  completion_criteria: string | null
+  ai_review_enabled: boolean
   created_at: string
   updated_at: string
 }
@@ -263,4 +271,96 @@ export interface MealPlanEntryWithRecipe extends MealPlanEntry {
 
 export interface RecipeWithCategory extends Recipe {
   recipe_categories: RecipeCategory
+}
+
+// ============================================
+// AI REVIEW TYPES
+// ============================================
+
+export type ExpectationType = 'exercise' | 'reading' | 'tidy_up' | 'daily_chore'
+
+export interface ExpectationRule {
+  id: string
+  expectation_type: ExpectationType
+  scope_description: string
+  completion_criteria: string
+  ai_review_enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type PhotoStatus = 'ai_reviewing' | 'needs_revision' | 'pending_review' | 'approved' | 'rejected'
+export type EntityType = 'gig' | 'chore' | 'expectation'
+
+export interface CompletionPhoto {
+  id: string
+  entity_type: EntityType
+  entity_id: string
+  kid_id: string
+  storage_path: string
+  file_name: string | null
+  file_size: number | null
+  mime_type: string | null
+  caption: string | null
+  notes: string | null
+  status: PhotoStatus
+  uploaded_at: string
+  // Parent review fields
+  reviewed_at: string | null
+  reviewed_by: string | null
+  review_feedback: string | null
+  // AI review fields
+  ai_reviewed_at: string | null
+  ai_passed: boolean | null
+  ai_feedback: string | null
+  ai_confidence: number | null
+  submission_attempt: number
+  escalated_to_parent: boolean
+}
+
+export interface AIReviewLog {
+  id: string
+  completion_photo_id: string
+  entity_type: EntityType
+  entity_id: string
+  rules_used: {
+    scope_description: string
+    completion_criteria: string
+    checklist?: string[]
+  }
+  ai_response: {
+    passed: boolean
+    feedback: string
+    confidence: number
+    checklist_assessment?: Array<{
+      item: string
+      passed: boolean
+      note?: string
+    }>
+  }
+  passed: boolean
+  confidence: number | null
+  processing_time_ms: number | null
+  model_used: string
+  created_at: string
+}
+
+// Type for AI evaluation result
+export interface AIEvaluationResult {
+  passed: boolean
+  feedback: string
+  confidence: number
+  checklist_assessment?: Array<{
+    item: string
+    passed: boolean
+    note?: string
+  }>
+}
+
+// Type for rules used in evaluation
+export interface AIRules {
+  scope_description: string
+  completion_criteria: string
+  checklist?: string[]
+  ai_review_enabled: boolean
 }

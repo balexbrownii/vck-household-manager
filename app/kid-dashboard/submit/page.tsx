@@ -12,6 +12,9 @@ import {
   Clock,
   Star,
   Loader2,
+  Sparkles,
+  AlertCircle,
+  MessageSquare,
 } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui/shared'
 
@@ -28,6 +31,42 @@ interface WorkItem {
   stars?: number
 }
 
+interface SubmissionResult {
+  photo: {
+    id: string
+    status: string
+    ai_feedback: string | null
+  }
+}
+
+// Helper to get context-aware placeholder for notes
+function getNotesPlaceholder(type?: string): string {
+  switch (type) {
+    case 'gig':
+      return 'Example: "I finished washing the car. I scrubbed all the doors and windows, and rinsed everything off."'
+    case 'chore':
+      return 'Example: "I cleaned my room. I made my bed, picked up clothes, and vacuumed the floor."'
+    case 'expectation':
+      return 'Example: "I did 20 minutes of exercise. I ran around the block twice and did jumping jacks."'
+    default:
+      return 'Describe what you did and how you did it...'
+  }
+}
+
+// Helper to get hint text based on task type
+function getExampleHint(type?: string): string {
+  switch (type) {
+    case 'gig':
+      return 'What steps did you complete?'
+    case 'chore':
+      return 'What did you clean/organize?'
+    case 'expectation':
+      return 'How long? What activity?'
+    default:
+      return ''
+  }
+}
+
 export default function SubmitWorkPage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -40,6 +79,7 @@ export default function SubmitWorkPage() {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -149,6 +189,17 @@ export default function SubmitWorkPage() {
       return
     }
 
+    // Notes are now required
+    if (!notes.trim()) {
+      setError('Please describe what you did - this helps with review!')
+      return
+    }
+
+    if (notes.trim().length < 10) {
+      setError('Please add a bit more detail about what you did')
+      return
+    }
+
     setSubmitting(true)
     setError('')
 
@@ -157,9 +208,7 @@ export default function SubmitWorkPage() {
       formData.append('photo', photo)
       formData.append('entityType', selectedItem.type)
       formData.append('entityId', selectedItem.id)
-      if (notes) {
-        formData.append('notes', notes)
-      }
+      formData.append('notes', notes.trim())
 
       const res = await fetch('/api/photos/upload', {
         method: 'POST',
@@ -173,12 +222,15 @@ export default function SubmitWorkPage() {
         return
       }
 
+      setSubmissionResult(data)
       setSuccess(true)
 
-      // Reset after delay
-      setTimeout(() => {
-        router.push('/kid-dashboard')
-      }, 2000)
+      // For needs_revision, don't auto-redirect - let kid see feedback
+      if (data.photo?.status !== 'needs_revision') {
+        setTimeout(() => {
+          router.push('/kid-dashboard')
+        }, 3000)
+      }
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -194,17 +246,73 @@ export default function SubmitWorkPage() {
     )
   }
 
-  if (success) {
+  if (success && submissionResult) {
+    const status = submissionResult.photo?.status
+    const feedback = submissionResult.photo?.ai_feedback
+
+    // AI needs revision - show feedback and options
+    if (status === 'needs_revision') {
+      return (
+        <main className="kid-page bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-8 shadow-xl text-center max-w-md mx-4">
+            <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-10 h-10 text-orange-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Almost There!</h1>
+            <p className="text-gray-600 mb-4">
+              The AI reviewer has some suggestions:
+            </p>
+            {feedback && (
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 text-left">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-gray-700 text-sm">{feedback}</p>
+                </div>
+              </div>
+            )}
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push('/kid-dashboard/revisions')}
+                className="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors"
+              >
+                Fix and Resubmit
+              </button>
+              <button
+                onClick={() => router.push('/kid-dashboard')}
+                className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Go Back Home
+              </button>
+            </div>
+          </div>
+        </main>
+      )
+    }
+
+    // AI passed or pending parent review
     return (
-      <main className="kid-page bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+      <main className="kid-page bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-8 shadow-xl text-center max-w-md mx-4">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-10 h-10 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Submitted!</h1>
-          <p className="text-gray-600">
-            Your work has been sent for parent review. Great job!
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {status === 'pending_review' ? 'Looks Great!' : 'Submitted!'}
+          </h1>
+          <p className="text-gray-600 mb-2">
+            {status === 'pending_review'
+              ? 'AI review passed! Sent to your parents for final approval.'
+              : 'Your work has been sent for review. Great job!'}
           </p>
+          {feedback && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-3 mt-4">
+              <div className="flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                <p className="text-gray-600 text-sm">{feedback}</p>
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-gray-400 mt-4">Returning to dashboard...</p>
         </div>
       </main>
     )
@@ -318,17 +426,41 @@ export default function SubmitWorkPage() {
           )}
         </div>
 
-        {/* Step 3: Add Notes (Optional) */}
+        {/* Step 3: Describe What You Did (Required) */}
         <div className="bg-white rounded-2xl p-6 mb-4 shadow-lg">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            3. Add notes (optional)
+          <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-purple-600" />
+            3. Describe what you did
           </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Tell us what you did so we can check your work!
+          </p>
           <textarea
             value={notes}
             onChange={e => setNotes(e.target.value)}
-            placeholder="Anything you want to tell your parents about this work?"
-            className="w-full p-3 border border-gray-300 rounded-xl resize-none h-24 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            placeholder={getNotesPlaceholder(selectedItem?.type)}
+            className={`w-full p-3 border-2 rounded-xl resize-none h-28 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+              notes.trim().length > 0 && notes.trim().length < 10
+                ? 'border-orange-300'
+                : notes.trim().length >= 10
+                ? 'border-green-300'
+                : 'border-gray-200'
+            }`}
           />
+          <div className="flex justify-between items-center mt-2">
+            <p className="text-xs text-gray-400">
+              {notes.trim().length >= 10 ? (
+                <span className="text-green-600">Good description!</span>
+              ) : (
+                `${Math.max(0, 10 - notes.trim().length)} more characters needed`
+              )}
+            </p>
+            {selectedItem && (
+              <p className="text-xs text-purple-500">
+                {getExampleHint(selectedItem.type)}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Error Message */}
@@ -341,13 +473,13 @@ export default function SubmitWorkPage() {
         {/* Submit Button */}
         <button
           onClick={handleSubmit}
-          disabled={!selectedItem || !photo || submitting}
+          disabled={!selectedItem || !photo || notes.trim().length < 10 || submitting}
           className="w-full py-4 bg-white rounded-2xl font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
         >
           {submitting ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Submitting...</span>
+              <span>Reviewing...</span>
             </>
           ) : (
             <>

@@ -9,6 +9,11 @@ function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex')
 }
 
+/**
+ * POST /api/photos/resubmit
+ * Resubmit a photo after AI rejection
+ * Creates a new photo record linked to the same entity
+ */
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies()
@@ -44,24 +49,41 @@ export async function POST(request: NextRequest) {
     // Parse form data
     const formData = await request.formData()
     const file = formData.get('photo') as File
-    const entityType = formData.get('entityType') as string
-    const entityId = formData.get('entityId') as string
+    const originalPhotoId = formData.get('originalPhotoId') as string
     const notes = formData.get('notes') as string | null
 
-    if (!file || !entityType || !entityId) {
+    if (!file || !originalPhotoId) {
       return NextResponse.json(
-        { error: 'Missing required fields: photo, entityType, entityId' },
+        { error: 'Missing required fields: photo, originalPhotoId' },
         { status: 400 }
       )
     }
 
-    // Validate entity type
-    if (!['gig', 'chore', 'expectation'].includes(entityType)) {
+    // Get original photo to get entity info and submission count
+    const { data: originalPhoto, error: photoError } = await supabase
+      .from('completion_photos')
+      .select('entity_type, entity_id, kid_id, submission_attempt')
+      .eq('id', originalPhotoId)
+      .single()
+
+    if (photoError || !originalPhoto) {
       return NextResponse.json(
-        { error: 'Invalid entity type' },
-        { status: 400 }
+        { error: 'Original photo not found' },
+        { status: 404 }
       )
     }
+
+    // Verify kid owns this photo
+    if (originalPhoto.kid_id !== kidId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      )
+    }
+
+    const entityType = originalPhoto.entity_type
+    const entityId = originalPhoto.entity_id
+    const newAttempt = (originalPhoto.submission_attempt || 1) + 1
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic']
@@ -111,12 +133,12 @@ export async function POST(request: NextRequest) {
       .from('completion-photos')
       .getPublicUrl(fileName)
 
-    // Check if AI review is enabled for this entity
+    // Check if AI review is enabled
     const rules = await getRulesForEntity(entityType as EntityType, entityId)
     const aiEnabled = rules?.ai_review_enabled ?? true
     const initialStatus = aiEnabled ? 'ai_reviewing' : 'pending_review'
 
-    // Save photo record to database
+    // Save new photo record
     const { data: photoRecord, error: dbError } = await supabase
       .from('completion_photos')
       .insert({
@@ -126,14 +148,13 @@ export async function POST(request: NextRequest) {
         storage_path: fileName,
         notes: notes || null,
         status: initialStatus,
-        submission_attempt: 1,
+        submission_attempt: newAttempt,
       })
       .select()
       .single()
 
     if (dbError) {
       console.error('Database error:', dbError)
-      // Try to clean up uploaded file
       await supabase.storage.from('completion-photos').remove([fileName])
       return NextResponse.json(
         { error: 'Failed to save photo record' },
@@ -141,7 +162,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // If AI review is enabled, process the submission
+    // Mark original as superseded (optional - keep for history)
+    // We don't delete old photos to maintain audit trail
+
+    // Process with AI if enabled
     let aiResult = null
     if (aiEnabled && photoRecord) {
       aiResult = await processSubmission(photoRecord.id)
@@ -154,10 +178,11 @@ export async function POST(request: NextRequest) {
         url: urlData.publicUrl,
         status: aiResult?.status || initialStatus,
         ai_feedback: aiResult?.feedback || null,
+        submission_attempt: newAttempt,
       },
     })
   } catch (error) {
-    console.error('Photo upload error:', error)
+    console.error('Photo resubmit error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
