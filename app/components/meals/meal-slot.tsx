@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { MealPlanEntryWithRecipe } from '@/types'
-import { Plus, AlertTriangle } from 'lucide-react'
+import { Plus, Info, X } from 'lucide-react'
 
 interface MealSlotProps {
   entry?: MealPlanEntryWithRecipe
@@ -10,6 +11,8 @@ interface MealSlotProps {
 }
 
 export default function MealSlot({ entry, onClick, onRemove }: MealSlotProps) {
+  const [showNotes, setShowNotes] = useState(false)
+
   if (!entry) {
     return (
       <button
@@ -24,7 +27,7 @@ export default function MealSlot({ entry, onClick, onRemove }: MealSlotProps) {
   const recipe = entry.recipes
   const hasAlexMods = !!recipe.alex_modifications
   const hasAlexanderNotes = !!recipe.alexander_notes
-  const hasWarning = hasAlexMods || hasAlexanderNotes
+  const hasNotes = hasAlexMods || hasAlexanderNotes
 
   return (
     <div
@@ -46,17 +49,46 @@ export default function MealSlot({ entry, onClick, onRemove }: MealSlotProps) {
             </div>
           )}
         </div>
-        {hasWarning && (
-          <div className="flex-shrink-0 relative group/warning">
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <div className="absolute right-0 top-5 z-10 hidden group-hover/warning:block w-48 p-2 bg-amber-50 border border-amber-200 rounded-lg shadow-lg text-xs text-amber-800">
-              <div className="font-medium mb-1">Family Notes:</div>
-              {hasAlexMods && <div>Alex: {recipe.alex_modifications}</div>}
-              {hasAlexanderNotes && <div>Alexander: {recipe.alexander_notes}</div>}
-            </div>
-          </div>
+        {hasNotes && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowNotes(!showNotes)
+            }}
+            className="flex-shrink-0 p-1 -m-1 rounded hover:bg-blue-100"
+          >
+            <Info className="w-4 h-4 text-blue-500" />
+          </button>
         )}
       </div>
+
+      {/* Notes popup - shown on tap */}
+      {showNotes && (
+        <div
+          className="absolute right-0 top-full mt-1 z-20 w-56 p-3 bg-white border border-gray-200 rounded-lg shadow-lg text-xs"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-medium text-gray-900">Family Notes</span>
+            <button
+              onClick={() => setShowNotes(false)}
+              className="p-1 hover:bg-gray-100 rounded"
+            >
+              <X className="w-3 h-3 text-gray-500" />
+            </button>
+          </div>
+          {hasAlexMods && (
+            <div className="text-gray-700 mb-1">
+              <span className="font-medium">Alex:</span> {recipe.alex_modifications}
+            </div>
+          )}
+          {hasAlexanderNotes && (
+            <div className="text-gray-700">
+              <span className="font-medium">Alexander:</span> {recipe.alexander_notes}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Remove button - shows on hover */}
       {onRemove && (
