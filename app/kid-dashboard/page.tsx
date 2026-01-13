@@ -15,6 +15,8 @@ import {
   BookOpen,
   Sparkles,
   Home,
+  AlertTriangle,
+  UtensilsCrossed,
 } from 'lucide-react'
 import { ExpandableTask } from '@/components/ui/expandable-task'
 import { LoadingSpinner } from '@/components/ui/shared'
@@ -50,14 +52,32 @@ interface AvailableGig {
   estimated_minutes: number
 }
 
+interface PendingTimeout {
+  id: string
+  timeout_minutes: number
+  violation_type: string
+  reset_count: number
+  started_at: string
+}
+
+interface PlannedMeal {
+  id: string
+  meal_type: string
+  recipe_title: string
+  recipe_id: string
+}
+
 export default function KidDashboardPage() {
   const router = useRouter()
   const [kid, setKid] = useState<Kid | null>(null)
   const [expectations, setExpectations] = useState<DailyExpectation | null>(null)
   const [choreAssignment, setChoreAssignment] = useState<ChoreAssignment | null>(null)
   const [availableGigs, setAvailableGigs] = useState<AvailableGig[]>([])
+  const [pendingTimeout, setPendingTimeout] = useState<PendingTimeout | null>(null)
+  const [todaysMeals, setTodaysMeals] = useState<PlannedMeal[]>([])
   const [loading, setLoading] = useState(true)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [completingTimeout, setCompletingTimeout] = useState(false)
 
   useEffect(() => {
     checkSession()
@@ -83,10 +103,12 @@ export default function KidDashboardPage() {
   }
 
   const loadDashboardData = async (kidId: string, kidTier: number) => {
-    const [expectationsRes, choresRes, gigsRes] = await Promise.all([
+    const [expectationsRes, choresRes, gigsRes, timeoutRes, mealsRes] = await Promise.all([
       fetch(`/api/expectations?kidId=${kidId}`).catch(() => null),
       fetch(`/api/chores/assignments?kidId=${kidId}`).catch(() => null),
       fetch('/api/gigs?status=available').catch(() => null),
+      fetch(`/api/timeout/pending?kidId=${kidId}`).catch(() => null),
+      fetch('/api/meals/today').catch(() => null),
     ])
 
     if (expectationsRes?.ok) {
@@ -104,6 +126,16 @@ export default function KidDashboardPage() {
       setAvailableGigs(
         (data.gigs || []).filter((g: AvailableGig) => g.tier <= kidTier).slice(0, 5)
       )
+    }
+
+    if (timeoutRes?.ok) {
+      const data = await timeoutRes.json()
+      setPendingTimeout(data.timeout || null)
+    }
+
+    if (mealsRes?.ok) {
+      const data = await mealsRes.json()
+      setTodaysMeals(data.meals || [])
     }
   }
 
@@ -134,6 +166,27 @@ export default function KidDashboardPage() {
     }
   }
 
+  const handleTimeoutComplete = async () => {
+    if (!pendingTimeout || completingTimeout) return
+
+    setCompletingTimeout(true)
+    try {
+      const res = await fetch('/api/timeout/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timeoutId: pendingTimeout.id }),
+      })
+
+      if (res.ok) {
+        setPendingTimeout(null)
+      }
+    } catch (error) {
+      console.error('Failed to complete timeout:', error)
+    } finally {
+      setCompletingTimeout(false)
+    }
+  }
+
   const handleLogout = async () => {
     setLoggingOut(true)
     await fetch('/api/kid-auth/logout', { method: 'POST' })
@@ -153,6 +206,17 @@ export default function KidDashboardPage() {
   const starsToMilestone = 200 - (kid.total_stars % 200)
   const progressPercent = ((kid.total_stars % 200) / 200) * 100
   const milestonesEarned = Math.floor(kid.total_stars / 200)
+
+  // Group meals by type for display
+  const mealsByType: Record<string, PlannedMeal[]> = {}
+  todaysMeals.forEach(meal => {
+    if (!mealsByType[meal.meal_type]) {
+      mealsByType[meal.meal_type] = []
+    }
+    mealsByType[meal.meal_type].push(meal)
+  })
+
+  const mealOrder = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert', 'drink']
 
   return (
     <main className="kid-page bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 no-pull-refresh">
@@ -177,6 +241,40 @@ export default function KidDashboardPage() {
             <LogOut className="w-5 h-5 text-white" />
           </button>
         </header>
+
+        {/* Pending Timeout - MUST BE FIRST */}
+        {pendingTimeout && (
+          <section className="kid-section border-2 border-red-300 bg-red-50">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-red-700">
+                  Timeout: {pendingTimeout.timeout_minutes} minutes
+                  {pendingTimeout.reset_count > 0 && (
+                    <span className="ml-2 text-xs bg-red-200 px-2 py-0.5 rounded-full">
+                      Reset {pendingTimeout.reset_count}x
+                    </span>
+                  )}
+                </h2>
+                <p className="text-red-600 text-sm mt-1">
+                  {pendingTimeout.violation_type}
+                </p>
+                <p className="text-red-500 text-xs mt-2">
+                  Stand your timeout, then tap below when done.
+                </p>
+                <button
+                  onClick={handleTimeoutComplete}
+                  disabled={completingTimeout}
+                  className="mt-3 w-full py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 active:scale-[0.98] transition-all disabled:opacity-50"
+                >
+                  {completingTimeout ? 'Completing...' : 'I Finished My Timeout'}
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Star Progress */}
         <section className="kid-section">
@@ -207,6 +305,42 @@ export default function KidDashboardPage() {
             {kid.total_stars % 200} / 200 stars toward next $100 milestone
           </p>
         </section>
+
+        {/* Today's Meals */}
+        {todaysMeals.length > 0 && (
+          <section className="kid-section">
+            <h2 className="kid-section-title">
+              <UtensilsCrossed className="w-5 h-5 text-orange-500" />
+              Today&apos;s Meals
+            </h2>
+            <div className="space-y-2">
+              {mealOrder.map(mealType => {
+                const meals = mealsByType[mealType]
+                if (!meals || meals.length === 0) return null
+
+                const mealLabels: Record<string, string> = {
+                  breakfast: '🌅 Breakfast',
+                  lunch: '☀️ Lunch',
+                  dinner: '🌙 Dinner',
+                  snack: '🍎 Snack',
+                  dessert: '🍰 Dessert',
+                  drink: '🥤 Drink',
+                }
+
+                return (
+                  <div key={mealType} className="flex items-center gap-3 p-3 bg-orange-50 rounded-xl">
+                    <span className="text-sm font-medium text-orange-700 w-24">
+                      {mealLabels[mealType] || mealType}
+                    </span>
+                    <span className="text-gray-900 flex-1">
+                      {meals.map(m => m.recipe_title).join(', ')}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Daily Expectations */}
         <section className="kid-section">
