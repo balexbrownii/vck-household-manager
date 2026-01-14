@@ -12,11 +12,15 @@ import {
   ChevronRight,
   ToggleLeft,
   ToggleRight,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
 } from 'lucide-react'
 import RulesEditor from '@/components/rules/rules-editor'
 import { LoadingSpinner } from '@/components/ui/shared'
 
-type TabType = 'gigs' | 'chores' | 'expectations'
+type TabType = 'gigs' | 'chores' | 'expectations' | 'metrics'
 
 interface GigRule {
   id: string
@@ -49,11 +53,44 @@ interface ExpectationRule {
   ai_review_enabled: boolean
 }
 
+interface AIMetric {
+  entity_type: string
+  total_reviews: number
+  agreements: number
+  false_positives: number
+  false_negatives: number
+  accuracy_rate: number
+}
+
+interface Disagreement {
+  id: string
+  entity_type: string
+  signal_type: 'false_positive' | 'false_negative'
+  ai_passed: boolean
+  ai_confidence: number
+  ai_feedback: string
+  parent_approved: boolean
+  parent_feedback: string | null
+  kid_notes: string | null
+  created_at: string
+}
+
+interface MetricsSummary {
+  totalReviews: number
+  agreements: number
+  falsePositives: number
+  falseNegatives: number
+  overallAccuracy: number | null
+}
+
 export default function RulesPage() {
   const [activeTab, setActiveTab] = useState<TabType>('gigs')
   const [gigs, setGigs] = useState<GigRule[]>([])
   const [chores, setChores] = useState<ChoreRule[]>([])
   const [expectations, setExpectations] = useState<ExpectationRule[]>([])
+  const [metrics, setMetrics] = useState<AIMetric[]>([])
+  const [disagreements, setDisagreements] = useState<Disagreement[]>([])
+  const [metricsSummary, setMetricsSummary] = useState<MetricsSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [editingItem, setEditingItem] = useState<{
     type: TabType
@@ -67,10 +104,11 @@ export default function RulesPage() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [gigsRes, choresRes, expectationsRes] = await Promise.all([
+      const [gigsRes, choresRes, expectationsRes, metricsRes] = await Promise.all([
         fetch('/api/rules/gigs'),
         fetch('/api/rules/chores'),
         fetch('/api/rules/expectations'),
+        fetch('/api/rules/metrics'),
       ])
 
       if (gigsRes.ok) {
@@ -84,6 +122,12 @@ export default function RulesPage() {
       if (expectationsRes.ok) {
         const { rules } = await expectationsRes.json()
         setExpectations(rules || [])
+      }
+      if (metricsRes.ok) {
+        const data = await metricsRes.json()
+        setMetrics(data.metrics || [])
+        setDisagreements(data.recentDisagreements || [])
+        setMetricsSummary(data.summary || null)
       }
     } catch (error) {
       console.error('Error fetching rules:', error)
@@ -275,6 +319,7 @@ export default function RulesPage() {
               { key: 'gigs', label: 'Gigs', icon: Briefcase, count: gigs.length },
               { key: 'chores', label: 'Chores', icon: Home, count: chores.length },
               { key: 'expectations', label: 'Expectations', icon: CheckCircle, count: expectations.length },
+              { key: 'metrics', label: 'AI Metrics', icon: BarChart3, count: metricsSummary?.totalReviews || 0 },
             ].map(({ key, label, icon: Icon, count }) => (
               <button
                 key={key}
@@ -426,6 +471,159 @@ export default function RulesPage() {
                 </div>
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Metrics Tab */}
+        {activeTab === 'metrics' && (
+          <div className="space-y-6">
+            {/* Summary Cards */}
+            {metricsSummary && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <BarChart3 className="w-5 h-5 text-purple-600" />
+                    <span className="text-sm text-gray-600">Total Reviews</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {metricsSummary.totalReviews}
+                  </p>
+                </div>
+                <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-5 h-5 text-green-600" />
+                    <span className="text-sm text-gray-600">AI Accuracy</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {metricsSummary.overallAccuracy !== null
+                      ? `${metricsSummary.overallAccuracy}%`
+                      : 'N/A'}
+                  </p>
+                </div>
+                <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-5 h-5 text-orange-600" />
+                    <span className="text-sm text-gray-600">Too Lenient</span>
+                  </div>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {metricsSummary.falsePositives}
+                  </p>
+                  <p className="text-xs text-gray-500">AI passed, parent rejected</p>
+                </div>
+                <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingDown className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm text-gray-600">Too Strict</span>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {metricsSummary.falseNegatives}
+                  </p>
+                  <p className="text-xs text-gray-500">AI failed, parent approved</p>
+                </div>
+              </div>
+            )}
+
+            {/* By Entity Type */}
+            {metrics.length > 0 && (
+              <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
+                <h3 className="font-semibold text-gray-900 mb-4">Accuracy by Task Type</h3>
+                <div className="space-y-3">
+                  {metrics.map((metric) => (
+                    <div
+                      key={metric.entity_type}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        {metric.entity_type === 'gig' && <Briefcase className="w-5 h-5 text-purple-600" />}
+                        {metric.entity_type === 'chore' && <Home className="w-5 h-5 text-blue-600" />}
+                        {metric.entity_type === 'expectation' && <CheckCircle className="w-5 h-5 text-green-600" />}
+                        <div>
+                          <p className="font-medium capitalize">{metric.entity_type}s</p>
+                          <p className="text-sm text-gray-500">
+                            {metric.total_reviews} reviews
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold">
+                          {metric.accuracy_rate !== null
+                            ? `${Math.round(metric.accuracy_rate)}%`
+                            : 'N/A'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {metric.false_positives} lenient · {metric.false_negatives} strict
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent Disagreements */}
+            {disagreements.length > 0 && (
+              <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  Recent AI Learning Signals
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  These disagreements are being used to improve AI accuracy for future evaluations.
+                </p>
+                <div className="space-y-3">
+                  {disagreements.map((d) => (
+                    <div
+                      key={d.id}
+                      className={`p-3 rounded-lg border-l-4 ${
+                        d.signal_type === 'false_positive'
+                          ? 'border-l-orange-500 bg-orange-50'
+                          : 'border-l-blue-500 bg-blue-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-xs font-medium px-2 py-1 rounded ${
+                          d.signal_type === 'false_positive'
+                            ? 'bg-orange-200 text-orange-800'
+                            : 'bg-blue-200 text-blue-800'
+                        }`}>
+                          {d.signal_type === 'false_positive' ? 'AI Too Lenient' : 'AI Too Strict'}
+                        </span>
+                        <span className="text-xs text-gray-500 capitalize">{d.entity_type}</span>
+                      </div>
+                      {d.kid_notes && (
+                        <p className="text-sm text-gray-700 mb-1">
+                          <strong>Kid said:</strong> "{d.kid_notes}"
+                        </p>
+                      )}
+                      <p className="text-sm text-gray-700 mb-1">
+                        <strong>AI said:</strong> {d.ai_feedback?.slice(0, 100)}
+                        {d.ai_feedback && d.ai_feedback.length > 100 ? '...' : ''}
+                      </p>
+                      {d.parent_feedback && (
+                        <p className="text-sm text-gray-700">
+                          <strong>Parent said:</strong> "{d.parent_feedback}"
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-2">
+                        {new Date(d.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {metricsSummary && metricsSummary.totalReviews === 0 && (
+              <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 p-8 text-center">
+                <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="font-semibold text-gray-900 mb-2">No AI Reviews Yet</h3>
+                <p className="text-gray-600">
+                  AI accuracy metrics will appear here once kids start submitting
+                  tasks for review and parents provide feedback.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

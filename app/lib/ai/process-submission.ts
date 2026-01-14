@@ -162,13 +162,14 @@ export async function processSubmission(photoId: string): Promise<ProcessResult>
     }
   }
 
-  // 6. Run AI evaluation
+  // 6. Run AI evaluation (includes learned patterns from parent feedback)
   const startTime = Date.now()
   const result = await evaluatePhoto(
     urlData.publicUrl,
     rules,
     photo.entity_type as EntityType,
-    photo.notes
+    photo.notes,
+    photo.entity_id  // Pass entity ID for entity-specific learned patterns
   )
   const processingTime = Date.now() - startTime
 

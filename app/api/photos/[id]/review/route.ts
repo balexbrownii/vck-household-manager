@@ -249,6 +249,46 @@ export async function POST(
       })
     }
 
+    // Log feedback signal for AI learning (if AI reviewed this submission)
+    if (photo.ai_reviewed_at !== null) {
+      const parentApproved = action === 'approve'
+      const aiPassed = photo.ai_passed === true
+
+      // Determine signal type
+      let signalType: 'agreement' | 'false_positive' | 'false_negative'
+      if (parentApproved === aiPassed) {
+        signalType = 'agreement'
+      } else if (aiPassed && !parentApproved) {
+        signalType = 'false_positive' // AI was too lenient
+      } else {
+        signalType = 'false_negative' // AI was too strict
+      }
+
+      // Get rules snapshot from ai_review_logs
+      const { data: aiLog } = await supabase
+        .from('ai_review_logs')
+        .select('rules_used')
+        .eq('completion_photo_id', photoId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      await supabase.from('ai_feedback_signals').insert({
+        completion_photo_id: photoId,
+        entity_type: photo.entity_type,
+        entity_id: photo.entity_id,
+        ai_passed: aiPassed,
+        ai_confidence: photo.ai_confidence,
+        ai_feedback: photo.ai_feedback,
+        parent_approved: parentApproved,
+        parent_feedback: feedback || null,
+        parent_id: user.id,
+        signal_type: signalType,
+        kid_notes: photo.notes,
+        rules_snapshot: aiLog?.rules_used || null,
+      })
+    }
+
     return NextResponse.json({
       success: true,
       status: newStatus,

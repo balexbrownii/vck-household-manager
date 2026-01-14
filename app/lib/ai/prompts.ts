@@ -1,8 +1,82 @@
 /**
  * Prompt templates for AI photo evaluation
+ * Includes learned patterns from parent feedback
  */
 
 import { EntityType, AIRules } from '@/types/database'
+import { createClient } from '@/lib/supabase/server'
+
+/**
+ * Learned pattern from parent feedback
+ */
+interface LearnedPattern {
+  type: 'false_positive' | 'false_negative'
+  description: string
+  parentFeedback: string | null
+}
+
+/**
+ * Explicit example added by parent
+ */
+interface LearnedExample {
+  type: 'should_pass' | 'should_fail'
+  description: string
+  reason: string
+}
+
+/**
+ * Fetch recent learning signals for an entity type
+ * These help the AI calibrate its decisions based on past parent feedback
+ */
+export async function getLearnedPatterns(
+  entityType: EntityType,
+  entityId?: string
+): Promise<{ patterns: LearnedPattern[]; examples: LearnedExample[] }> {
+  try {
+    const supabase = await createClient()
+
+    // Get recent disagreements (last 20) for this entity type
+    const { data: signals } = await supabase
+      .from('ai_feedback_signals')
+      .select('signal_type, kid_notes, parent_feedback')
+      .eq('entity_type', entityType)
+      .neq('signal_type', 'agreement')
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    const patterns: LearnedPattern[] = (signals || []).map(s => ({
+      type: s.signal_type as 'false_positive' | 'false_negative',
+      description: s.kid_notes || 'No description',
+      parentFeedback: s.parent_feedback,
+    }))
+
+    // Get active learned examples
+    let examplesQuery = supabase
+      .from('ai_learned_examples')
+      .select('example_type, description, reason')
+      .eq('entity_type', entityType)
+      .eq('active', true)
+
+    if (entityId) {
+      examplesQuery = examplesQuery.or(`entity_id.eq.${entityId},entity_id.is.null`)
+    } else {
+      examplesQuery = examplesQuery.is('entity_id', null)
+    }
+
+    const { data: examplesData } = await examplesQuery.limit(10)
+
+    const examples: LearnedExample[] = (examplesData || []).map(e => ({
+      type: e.example_type as 'should_pass' | 'should_fail',
+      description: e.description,
+      reason: e.reason,
+    }))
+
+    return { patterns, examples }
+  } catch (error) {
+    console.error('Error fetching learned patterns:', error)
+    return { patterns: [], examples: [] }
+  }
+}
 
 /**
  * Build the system prompt for Claude based on entity type
@@ -45,11 +119,13 @@ FEEDBACK TONE EXAMPLES:
 }
 
 /**
- * Build the user prompt with rules and kid's notes
+ * Build the user prompt with rules, kid's notes, and learned patterns
  */
 export function buildUserPrompt(
   rules: AIRules,
-  kidNotes: string | null
+  kidNotes: string | null,
+  patterns?: LearnedPattern[],
+  examples?: LearnedExample[]
 ): string {
   let prompt = `Please evaluate this photo submission.
 
@@ -73,6 +149,48 @@ WHAT THE CHILD SAID THEY DID:
 "${kidNotes}"
 
 Consider this description when evaluating - it provides context for what you're seeing in the photo.`
+  }
+
+  // Add learned patterns from parent feedback
+  if (patterns && patterns.length > 0) {
+    const falsePositives = patterns.filter(p => p.type === 'false_positive')
+    const falseNegatives = patterns.filter(p => p.type === 'false_negative')
+
+    if (falsePositives.length > 0) {
+      prompt += `
+
+CALIBRATION - CASES WHERE AI WAS TOO LENIENT (parent rejected what AI approved):
+${falsePositives.slice(0, 5).map(p => `- "${p.description}"${p.parentFeedback ? ` → Parent said: "${p.parentFeedback}"` : ''}`).join('\n')}
+Consider being more careful about similar situations.`
+    }
+
+    if (falseNegatives.length > 0) {
+      prompt += `
+
+CALIBRATION - CASES WHERE AI WAS TOO STRICT (parent approved what AI rejected):
+${falseNegatives.slice(0, 5).map(p => `- "${p.description}"${p.parentFeedback ? ` → Parent said: "${p.parentFeedback}"` : ''}`).join('\n')}
+Consider being more accepting of similar situations.`
+    }
+  }
+
+  // Add explicit learned examples from parents
+  if (examples && examples.length > 0) {
+    const shouldPass = examples.filter(e => e.type === 'should_pass')
+    const shouldFail = examples.filter(e => e.type === 'should_fail')
+
+    if (shouldPass.length > 0) {
+      prompt += `
+
+PARENT GUIDANCE - EXAMPLES THAT SHOULD PASS:
+${shouldPass.map(e => `- ${e.description} (Reason: ${e.reason})`).join('\n')}`
+    }
+
+    if (shouldFail.length > 0) {
+      prompt += `
+
+PARENT GUIDANCE - EXAMPLES THAT SHOULD NOT PASS:
+${shouldFail.map(e => `- ${e.description} (Reason: ${e.reason})`).join('\n')}`
+    }
   }
 
   prompt += `

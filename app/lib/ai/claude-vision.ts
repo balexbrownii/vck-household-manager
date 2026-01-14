@@ -1,10 +1,11 @@
 /**
  * Claude Vision API wrapper for photo evaluation
+ * Includes learned patterns from parent feedback to improve accuracy
  */
 
 import Anthropic from '@anthropic-ai/sdk'
 import { EntityType, AIRules, AIEvaluationResult } from '@/types/database'
-import { buildSystemPrompt, buildUserPrompt } from './prompts'
+import { buildSystemPrompt, buildUserPrompt, getLearnedPatterns } from './prompts'
 
 // Initialize Anthropic client
 function getClient(): Anthropic {
@@ -22,18 +23,23 @@ function getClient(): Anthropic {
  * @param rules - The evaluation rules (scope, criteria, checklist)
  * @param entityType - Type of task (gig, chore, expectation)
  * @param kidNotes - What the kid said they did (provides context)
+ * @param entityId - Optional entity ID for entity-specific learned patterns
  * @returns Evaluation result with pass/fail, feedback, and confidence
  */
 export async function evaluatePhoto(
   imageUrl: string,
   rules: AIRules,
   entityType: EntityType,
-  kidNotes: string | null
+  kidNotes: string | null,
+  entityId?: string
 ): Promise<AIEvaluationResult> {
   const client = getClient()
 
+  // Fetch learned patterns from parent feedback
+  const { patterns, examples } = await getLearnedPatterns(entityType, entityId)
+
   const systemPrompt = buildSystemPrompt(entityType)
-  const userPrompt = buildUserPrompt(rules, kidNotes)
+  const userPrompt = buildUserPrompt(rules, kidNotes, patterns, examples)
 
   try {
     const response = await client.messages.create({
