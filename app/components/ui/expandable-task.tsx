@@ -11,6 +11,7 @@ interface ExpandableTaskProps {
   onComplete: (id: string, note?: string) => void | Promise<void>
   disabled?: boolean
   icon?: React.ReactNode
+  expandedContent?: React.ReactNode
 }
 
 export function ExpandableTask({
@@ -21,6 +22,7 @@ export function ExpandableTask({
   onComplete,
   disabled = false,
   icon,
+  expandedContent,
 }: ExpandableTaskProps) {
   const [expanded, setExpanded] = useState(false)
   const [note, setNote] = useState('')
@@ -96,6 +98,13 @@ export function ExpandableTask({
       {/* Expanded Actions */}
       {expanded && !completed && (
         <div className="task-item-actions">
+          {/* Custom expanded content (checklist, etc.) */}
+          {expandedContent && (
+            <div className="task-item-expanded-content mb-3 p-3 bg-gray-50 rounded-lg">
+              {expandedContent}
+            </div>
+          )}
+
           {/* Note Input */}
           <div className="task-item-note">
             <textarea

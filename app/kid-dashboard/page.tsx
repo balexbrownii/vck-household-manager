@@ -17,6 +17,7 @@ import {
   Home,
   AlertTriangle,
   UtensilsCrossed,
+  Tv,
 } from 'lucide-react'
 import { ExpandableTask } from '@/components/ui/expandable-task'
 import { LoadingSpinner } from '@/components/ui/shared'
@@ -41,6 +42,8 @@ interface DailyExpectation {
 interface ChoreAssignment {
   assignment: string
   week: string
+  roomName: string | null
+  checklist: string[]
 }
 
 interface AvailableGig {
@@ -57,7 +60,9 @@ interface PendingTimeout {
   timeout_minutes: number
   violation_type: string
   reset_count: number
-  started_at: string
+  created_at: string
+  serving_started_at: string | null
+  served_at: string | null
 }
 
 interface PlannedMeal {
@@ -72,6 +77,7 @@ export default function KidDashboardPage() {
   const [kid, setKid] = useState<Kid | null>(null)
   const [expectations, setExpectations] = useState<DailyExpectation | null>(null)
   const [choreAssignment, setChoreAssignment] = useState<ChoreAssignment | null>(null)
+  const [tidyUpItems, setTidyUpItems] = useState<string[]>([])
   const [availableGigs, setAvailableGigs] = useState<AvailableGig[]>([])
   const [pendingTimeout, setPendingTimeout] = useState<PendingTimeout | null>(null)
   const [todaysMeals, setTodaysMeals] = useState<PlannedMeal[]>([])
@@ -80,62 +86,31 @@ export default function KidDashboardPage() {
   const [completingTimeout, setCompletingTimeout] = useState(false)
 
   useEffect(() => {
-    checkSession()
+    loadDashboard()
   }, [])
 
-  const checkSession = async () => {
+  const loadDashboard = async () => {
     try {
-      const res = await fetch('/api/kid-auth/session')
-      const data = await res.json()
+      const res = await fetch('/api/kid-dashboard/data')
 
-      if (!data.authenticated || !data.kid) {
+      if (!res.ok) {
         router.push('/kid-login')
         return
       }
 
+      const data = await res.json()
+
       setKid(data.kid)
-      await loadDashboardData(data.kid.id, data.kid.max_gig_tier)
+      setExpectations(data.expectations)
+      setChoreAssignment(data.choreAssignment)
+      setTidyUpItems(data.tidyUpItems || [])
+      setAvailableGigs(data.availableGigs || [])
+      setPendingTimeout(data.pendingTimeout)
+      setTodaysMeals(data.todaysMeals || [])
     } catch {
       router.push('/kid-login')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const loadDashboardData = async (kidId: string, kidTier: number) => {
-    const [expectationsRes, choresRes, gigsRes, timeoutRes, mealsRes] = await Promise.all([
-      fetch(`/api/expectations?kidId=${kidId}`).catch(() => null),
-      fetch(`/api/chores/assignments?kidId=${kidId}`).catch(() => null),
-      fetch('/api/gigs?status=available').catch(() => null),
-      fetch(`/api/timeout/pending?kidId=${kidId}`).catch(() => null),
-      fetch('/api/meals/today').catch(() => null),
-    ])
-
-    if (expectationsRes?.ok) {
-      const data = await expectationsRes.json()
-      setExpectations(data.expectation || null)
-    }
-
-    if (choresRes?.ok) {
-      const data = await choresRes.json()
-      setChoreAssignment(data.assignment || null)
-    }
-
-    if (gigsRes?.ok) {
-      const data = await gigsRes.json()
-      setAvailableGigs(
-        (data.gigs || []).filter((g: AvailableGig) => g.tier <= kidTier).slice(0, 5)
-      )
-    }
-
-    if (timeoutRes?.ok) {
-      const data = await timeoutRes.json()
-      setPendingTimeout(data.timeout || null)
-    }
-
-    if (mealsRes?.ok) {
-      const data = await mealsRes.json()
-      setTodaysMeals(data.meals || [])
     }
   }
 
@@ -155,12 +130,8 @@ export default function KidDashboardPage() {
         }),
       })
 
-      // Refresh expectations
-      const res = await fetch(`/api/expectations?kidId=${kid.id}`)
-      if (res.ok) {
-        const data = await res.json()
-        setExpectations(data.expectation || null)
-      }
+      // Refresh dashboard data
+      await loadDashboard()
     } catch (error) {
       console.error('Failed to update expectation:', error)
     }
@@ -217,6 +188,18 @@ export default function KidDashboardPage() {
   })
 
   const mealOrder = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert', 'drink']
+
+  // Build subtitle for tidy up
+  const tidyUpSubtitle = tidyUpItems.length > 0
+    ? tidyUpItems.slice(0, 2).join(', ') + (tidyUpItems.length > 2 ? '...' : '')
+    : 'Clean your space'
+
+  // Build subtitle for daily chores
+  const choreSubtitle = choreAssignment
+    ? choreAssignment.roomName
+      ? `${choreAssignment.assignment}: ${choreAssignment.roomName}`
+      : choreAssignment.assignment
+    : 'No chores today'
 
   return (
     <main className="kid-page bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 no-pull-refresh">
@@ -372,51 +355,102 @@ export default function KidDashboardPage() {
               <ExpandableTask
                 id="tidy_up"
                 title="Tidy Up"
-                subtitle="Clean your space"
+                subtitle={tidyUpSubtitle}
                 completed={expectations.tidy_up_complete}
                 onComplete={(id, note) => handleExpectationComplete('tidy_up', note)}
                 icon={<Sparkles className="w-5 h-5 text-purple-500" />}
+                expandedContent={
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    {tidyUpItems.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-purple-400">•</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                }
               />
 
               <ExpandableTask
                 id="daily_chore"
                 title="Daily Chores"
-                subtitle={choreAssignment ? choreAssignment.assignment : 'Check your chores'}
+                subtitle={choreSubtitle}
                 completed={expectations.daily_chore_complete}
                 onComplete={(id, note) => handleExpectationComplete('daily_chore', note)}
                 icon={<Home className="w-5 h-5 text-teal-500" />}
+                expandedContent={
+                  choreAssignment && choreAssignment.checklist.length > 0 ? (
+                    <ul className="space-y-1 text-sm text-gray-600">
+                      {choreAssignment.checklist.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-teal-400">•</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : choreAssignment ? (
+                    <p className="text-sm text-gray-500">
+                      Complete your {choreAssignment.assignment} tasks for today.
+                    </p>
+                  ) : null
+                }
               />
 
-              {expectations.all_complete && (
-                <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl text-center">
-                  <span className="text-2xl mr-2">🎉</span>
-                  <span className="font-semibold text-green-700">
-                    All done! Screen time unlocked!
+              {/* Screen Time Status */}
+              <div className={`mt-4 p-4 rounded-xl text-center ${
+                expectations.all_complete
+                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200'
+                  : 'bg-gray-50 border border-gray-200'
+              }`}>
+                <div className="flex items-center justify-center gap-2">
+                  <Tv className={`w-5 h-5 ${expectations.all_complete ? 'text-green-600' : 'text-gray-400'}`} />
+                  <span className={`font-semibold ${expectations.all_complete ? 'text-green-700' : 'text-gray-500'}`}>
+                    {expectations.all_complete
+                      ? '🎉 Screen time unlocked!'
+                      : 'Complete all tasks to unlock screen time'
+                    }
                   </span>
                 </div>
-              )}
+              </div>
             </div>
           ) : (
             <div className="py-6 text-center">
-              <div className="skeleton h-16 w-full mb-3" />
-              <div className="skeleton h-16 w-full mb-3" />
-              <div className="skeleton h-16 w-full" />
+              <p className="text-gray-500">Loading expectations...</p>
             </div>
           )}
         </section>
 
-        {/* Today's Chores */}
+        {/* Today's Chores - Detailed View */}
         {choreAssignment && (
           <section className="kid-section">
             <h2 className="kid-section-title">
               <Clock className="w-5 h-5 text-blue-500" />
               My Chores: {choreAssignment.assignment}
             </h2>
+            {choreAssignment.roomName && (
+              <div className="mb-3 p-3 bg-blue-50 rounded-xl">
+                <p className="font-medium text-blue-800">
+                  Today: {choreAssignment.roomName}
+                </p>
+              </div>
+            )}
+            {choreAssignment.checklist.length > 0 && (
+              <ul className="space-y-2">
+                {choreAssignment.checklist.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-lg">
+                    <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0">
+                      {idx + 1}
+                    </span>
+                    <span className="text-gray-700">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
             <a
               href="/kid-dashboard/chores"
-              className="flex items-center justify-between p-4 bg-blue-50 rounded-xl hover:bg-blue-100 active:scale-[0.98] transition-all"
+              className="flex items-center justify-between p-4 mt-3 bg-blue-50 rounded-xl hover:bg-blue-100 active:scale-[0.98] transition-all"
             >
-              <span className="text-blue-700 font-semibold">View today&apos;s tasks</span>
+              <span className="text-blue-700 font-semibold">View full chore schedule</span>
               <ChevronRight className="w-5 h-5 text-blue-500" />
             </a>
           </section>
@@ -459,7 +493,7 @@ export default function KidDashboardPage() {
             </div>
           ) : (
             <p className="text-gray-500 text-sm text-center py-4">
-              Complete your expectations first to claim gigs!
+              No gigs available right now. Check back later!
             </p>
           )}
         </section>
