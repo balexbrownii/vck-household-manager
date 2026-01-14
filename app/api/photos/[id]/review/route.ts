@@ -154,19 +154,44 @@ export async function POST(
       }
     }
 
-    // If approved and it's a chore, mark as completed and verified
-    if (action === 'approve' && photo.entity_type === 'chore') {
-      await supabase
-        .from('chore_completions')
-        .update({
-          completed: true,
-          verified: true,
-          verified_at: new Date().toISOString(),
-          verified_by: user.id,
-        })
-        .eq('chore_id', photo.entity_id)
-        .eq('kid_id', photo.kid_id)
-        .eq('date', new Date().toISOString().split('T')[0])
+    // If it's a chore, update the chore_completions record
+    if (photo.entity_type === 'chore') {
+      // Get room name from chore_rooms using entity_id
+      const { data: room } = await supabase
+        .from('chore_rooms')
+        .select('room_name')
+        .eq('id', photo.entity_id)
+        .single()
+
+      if (room?.room_name) {
+        const today = new Date().toISOString().split('T')[0]
+
+        if (action === 'approve') {
+          await supabase
+            .from('chore_completions')
+            .update({
+              completed: true,
+              inspection_status: 'approved',
+              verified_by: user.id,
+              verified_at: new Date().toISOString(),
+              notes: feedback || null,
+            })
+            .eq('kid_id', photo.kid_id)
+            .eq('date', today)
+            .eq('room_name', room.room_name)
+        } else {
+          // Rejection - mark as rejected so kid can resubmit
+          await supabase
+            .from('chore_completions')
+            .update({
+              inspection_status: 'rejected',
+              notes: feedback || null,
+            })
+            .eq('kid_id', photo.kid_id)
+            .eq('date', today)
+            .eq('room_name', room.room_name)
+        }
+      }
     }
 
     // Send notification message to kid

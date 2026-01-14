@@ -141,12 +141,18 @@ export async function GET() {
             .single()
           entityDetails = gig
         } else if (photo.entity_type === 'chore') {
-          const { data: chore } = await supabase
-            .from('chores')
-            .select('name')
+          const { data: room } = await supabase
+            .from('chore_rooms')
+            .select('room_name, assignment, checklist')
             .eq('id', photo.entity_id)
             .single()
-          entityDetails = chore
+          if (room) {
+            entityDetails = {
+              title: room.room_name,
+              assignment: room.assignment,
+              checklist: room.checklist,
+            }
+          }
         }
 
         // Get public URL for the photo

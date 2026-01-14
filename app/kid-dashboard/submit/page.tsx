@@ -30,6 +30,7 @@ interface WorkItem {
   description?: string
   stars?: number
   claimId?: string
+  completionId?: string | null
   inspectionStatus?: string | null
   inspectionNotes?: string | null
 }
@@ -130,13 +131,21 @@ export default function SubmitWorkPage() {
       if (choresRes?.ok) {
         const choresData = await choresRes.json()
         if (choresData.chores) {
+          // Filter to only show incomplete chores that haven't been submitted
           items.push(
-            ...choresData.chores.map((c: { id: string; name: string; description: string }) => ({
-              id: c.id,
-              type: 'chore' as const,
-              title: c.name,
-              description: c.description,
-            }))
+            ...choresData.chores
+              .filter((c: { completed: boolean; inspectionStatus: string | null }) =>
+                !c.completed || c.inspectionStatus === 'rejected'
+              )
+              .map((c: { id: string; roomName: string; checklist: string[]; completionId: string | null; inspectionStatus: string | null; kidNotes: string | null }) => ({
+                id: c.id,
+                completionId: c.completionId,
+                type: 'chore' as const,
+                title: c.roomName,
+                description: c.checklist?.join(', ') || 'Complete all tasks',
+                inspectionStatus: c.inspectionStatus,
+                inspectionNotes: c.kidNotes,
+              }))
           )
         }
       }

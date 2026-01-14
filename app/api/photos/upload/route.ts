@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
     const kidName = kid?.name || 'Your child'
     const entityLabel = entityType === 'gig' ? 'gig' : entityType === 'chore' ? 'chore' : 'expectation'
 
-    // Get entity name if it's a gig
+    // Get entity name and handle entity-specific logic
     let entityName = entityLabel
     if (entityType === 'gig') {
       const { data: gig } = await supabase
@@ -179,6 +179,54 @@ export async function POST(request: NextRequest) {
         .eq('gig_id', entityId)
         .eq('kid_id', kidId)
         .is('completed_at', null)
+    } else if (entityType === 'chore') {
+      // Get room details for chores
+      const { data: room } = await supabase
+        .from('chore_rooms')
+        .select('room_name, assignment')
+        .eq('id', entityId)
+        .single()
+
+      if (room?.room_name) {
+        entityName = room.room_name
+
+        // Get today's date
+        const today = new Date().toISOString().split('T')[0]
+
+        // Check if completion record exists, if not create it
+        const { data: existingCompletion } = await supabase
+          .from('chore_completions')
+          .select('id')
+          .eq('kid_id', kidId)
+          .eq('date', today)
+          .eq('room_name', room.room_name)
+          .single()
+
+        if (existingCompletion) {
+          // Update existing completion - mark as submitted and clear rejection
+          await supabase
+            .from('chore_completions')
+            .update({
+              submitted_for_review_at: new Date().toISOString(),
+              inspection_status: null,
+              kid_notes: notes || null,
+            })
+            .eq('id', existingCompletion.id)
+        } else {
+          // Create new completion record
+          await supabase
+            .from('chore_completions')
+            .insert({
+              kid_id: kidId,
+              date: today,
+              assignment: room.assignment,
+              room_name: room.room_name,
+              completed: false,
+              submitted_for_review_at: new Date().toISOString(),
+              kid_notes: notes || null,
+            })
+        }
+      }
     }
 
     // Send notification to parents (if not auto-approved by AI)

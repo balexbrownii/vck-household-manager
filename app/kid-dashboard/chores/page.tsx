@@ -23,12 +23,12 @@ interface ChoreAssignment {
 
 interface Chore {
   id: string
-  completionId: string
-  name: string
-  description: string
-  category: string
+  roomName: string
+  checklist: string[]
+  completionId: string | null
   completed: boolean
-  verified: boolean
+  inspectionStatus: string | null
+  kidNotes: string | null
 }
 
 export default function ChoresPage() {
@@ -158,40 +158,63 @@ export default function ChoresPage() {
                 <div
                   key={chore.id}
                   className={`flex items-start gap-3 p-4 rounded-xl transition-all ${
-                    chore.completed
+                    chore.completed && chore.inspectionStatus === 'approved'
                       ? 'bg-green-50 border-2 border-green-200'
+                      : chore.inspectionStatus === 'rejected'
+                      ? 'bg-orange-50 border-2 border-orange-200'
+                      : chore.completed
+                      ? 'bg-blue-50 border-2 border-blue-200'
                       : 'bg-gray-50 border-2 border-gray-100'
                   }`}
                 >
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    chore.completed
+                    chore.completed && chore.inspectionStatus === 'approved'
                       ? 'bg-green-500'
+                      : chore.inspectionStatus === 'rejected'
+                      ? 'bg-orange-500'
+                      : chore.completed
+                      ? 'bg-blue-500'
                       : 'border-2 border-gray-300'
                   }`}>
-                    {chore.completed && (
+                    {(chore.completed || chore.inspectionStatus) && (
                       <CheckCircle2 className="w-4 h-4 text-white" />
                     )}
                   </div>
                   <div className="flex-1">
                     <div className={`font-medium ${
-                      chore.completed ? 'text-green-700 line-through' : 'text-gray-900'
+                      chore.completed && chore.inspectionStatus === 'approved'
+                        ? 'text-green-700'
+                        : chore.inspectionStatus === 'rejected'
+                        ? 'text-orange-700'
+                        : 'text-gray-900'
                     }`}>
-                      {chore.name}
+                      {chore.roomName}
                     </div>
-                    {chore.description && (
-                      <div className="text-sm text-gray-500 mt-1">
-                        {chore.description}
-                      </div>
+                    {chore.checklist && chore.checklist.length > 0 && (
+                      <ul className="text-sm text-gray-500 mt-1 space-y-0.5">
+                        {chore.checklist.map((item, idx) => (
+                          <li key={idx} className="flex items-center gap-1">
+                            <span className="w-1 h-1 bg-gray-400 rounded-full" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
                     )}
-                    {chore.category && (
-                      <div className="text-xs text-gray-400 mt-1 capitalize">
-                        {chore.category}
-                      </div>
-                    )}
-                    {chore.verified && (
+                    {chore.inspectionStatus === 'approved' && (
                       <div className="flex items-center gap-1 mt-2 text-xs text-green-600">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>Verified by parent</span>
+                      </div>
+                    )}
+                    {chore.inspectionStatus === 'rejected' && (
+                      <div className="mt-2 text-xs text-orange-600">
+                        Needs revision - submit again
+                      </div>
+                    )}
+                    {chore.completed && !chore.inspectionStatus && (
+                      <div className="flex items-center gap-1 mt-2 text-xs text-blue-600">
+                        <Clock className="w-3 h-3" />
+                        <span>Pending review</span>
                       </div>
                     )}
                   </div>
