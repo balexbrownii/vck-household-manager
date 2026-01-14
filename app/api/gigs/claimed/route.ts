@@ -22,6 +22,8 @@ export async function GET(request: NextRequest) {
         id,
         claimed_at,
         inspection_status,
+        inspection_notes,
+        inspected_at,
         gigs (
           id,
           title,
@@ -67,6 +69,8 @@ export async function GET(request: NextRequest) {
         estimatedMinutes: gigData.estimated_minutes,
         claimedAt: claim.claimed_at,
         inspectionStatus: claim.inspection_status,
+        inspectionNotes: claim.inspection_notes,
+        inspectedAt: claim.inspected_at,
       }
     }).filter(Boolean) || []
 

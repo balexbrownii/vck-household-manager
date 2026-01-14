@@ -166,6 +166,19 @@ export async function POST(request: NextRequest) {
         .eq('id', entityId)
         .single()
       if (gig?.title) entityName = gig.title
+
+      // Clear any previous rejection status when resubmitting
+      await supabase
+        .from('claimed_gigs')
+        .update({
+          inspection_status: null,
+          inspection_notes: null,
+          inspected_by: null,
+          inspected_at: null,
+        })
+        .eq('gig_id', entityId)
+        .eq('kid_id', kidId)
+        .is('completed_at', null)
     }
 
     // Send notification to parents (if not auto-approved by AI)

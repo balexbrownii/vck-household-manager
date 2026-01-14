@@ -29,6 +29,9 @@ interface WorkItem {
   title: string
   description?: string
   stars?: number
+  claimId?: string
+  inspectionStatus?: string | null
+  inspectionNotes?: string | null
 }
 
 interface SubmissionResult {
@@ -110,12 +113,15 @@ export default function SubmitWorkPage() {
         const gigsData = await gigsRes.json()
         if (gigsData.gigs) {
           items.push(
-            ...gigsData.gigs.map((g: { id: string; title: string; description: string; stars: number }) => ({
+            ...gigsData.gigs.map((g: { id: string; claimId: string; title: string; description: string; stars: number; inspectionStatus?: string | null; inspectionNotes?: string | null }) => ({
               id: g.id,
+              claimId: g.claimId,
               type: 'gig' as const,
               title: g.title,
               description: g.description,
               stars: g.stars,
+              inspectionStatus: g.inspectionStatus,
+              inspectionNotes: g.inspectionNotes,
             }))
           )
         }
@@ -340,29 +346,57 @@ export default function SubmitWorkPage() {
 
           {workItems.length > 0 ? (
             <div className="space-y-3">
-              {workItems.map(item => (
+              {/* Sort rejected items to top */}
+              {[...workItems].sort((a, b) => {
+                if (a.inspectionStatus === 'rejected' && b.inspectionStatus !== 'rejected') return -1
+                if (a.inspectionStatus !== 'rejected' && b.inspectionStatus === 'rejected') return 1
+                return 0
+              }).map(item => (
                 <button
                   key={`${item.type}-${item.id}`}
                   onClick={() => setSelectedItem(item)}
                   className={`w-full p-4 rounded-xl text-left transition-all border-2 ${
                     selectedItem?.id === item.id && selectedItem?.type === item.type
                       ? 'border-purple-500 bg-purple-50'
+                      : item.inspectionStatus === 'rejected'
+                      ? 'border-orange-400 bg-orange-50'
                       : 'border-gray-200 hover:border-purple-300'
                   }`}
                 >
+                  {/* Rejection notice */}
+                  {item.inspectionStatus === 'rejected' && (
+                    <div className="mb-3 p-3 bg-orange-100 rounded-lg border border-orange-200">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <div className="font-semibold text-orange-800 text-sm">Needs Revision</div>
+                          {item.inspectionNotes && (
+                            <p className="text-sm text-orange-700 mt-1">{item.inspectionNotes}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-start gap-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      item.type === 'gig' ? 'bg-purple-100' : 'bg-blue-100'
+                      item.inspectionStatus === 'rejected'
+                        ? 'bg-orange-200'
+                        : item.type === 'gig' ? 'bg-purple-100' : 'bg-blue-100'
                     }`}>
                       {item.type === 'gig' ? (
-                        <Briefcase className="w-5 h-5 text-purple-600" />
+                        <Briefcase className={`w-5 h-5 ${item.inspectionStatus === 'rejected' ? 'text-orange-600' : 'text-purple-600'}`} />
                       ) : (
                         <Clock className="w-5 h-5 text-blue-600" />
                       )}
                     </div>
                     <div className="flex-1">
                       <div className="font-medium text-gray-900">{item.title}</div>
-                      <div className="text-sm text-gray-500 capitalize">{item.type}</div>
+                      <div className="text-sm text-gray-500 capitalize">
+                        {item.type}
+                        {item.inspectionStatus === 'rejected' && (
+                          <span className="ml-2 text-orange-600 font-medium">- Resubmit needed</span>
+                        )}
+                      </div>
                     </div>
                     {item.stars && (
                       <div className="flex items-center gap-1 bg-yellow-100 px-2 py-1 rounded-full">
