@@ -31,11 +31,14 @@ function getClientIP(request: NextRequest): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { kidId, pin } = await request.json()
+    const body = await request.json()
 
-    if (!kidId || !pin) {
+    // Support both name-based login (new) and kidId-based login (legacy/manage kids page)
+    const { name, kidId, pin } = body
+
+    if ((!name && !kidId) || !pin) {
       return NextResponse.json(
-        { error: 'Kid ID and PIN are required' },
+        { error: 'Name and PIN are required' },
         { status: 400 }
       )
     }
@@ -50,20 +53,53 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
     const ipAddress = getClientIP(request)
+
+    // Look up kid by name (case-insensitive) or by ID
+    let kid
+    let kidError
+
+    if (kidId) {
+      // Legacy lookup by ID
+      const result = await supabase
+        .from('kids')
+        .select('id, name, pin_hash')
+        .eq('id', kidId)
+        .single()
+      kid = result.data
+      kidError = result.error
+    } else {
+      // New lookup by name (case-insensitive)
+      const result = await supabase
+        .from('kids')
+        .select('id, name, pin_hash')
+        .ilike('name', name.trim())
+        .single()
+      kid = result.data
+      kidError = result.error
+    }
+
+    if (kidError || !kid) {
+      // Don't log failed attempts for name lookups (no valid kid_id)
+      return NextResponse.json(
+        { error: 'Name not found. Check your spelling and try again.' },
+        { status: 404 }
+      )
+    }
+
     const lockoutWindow = new Date(Date.now() - LOCKOUT_MINUTES * 60 * 1000).toISOString()
 
     // Check rate limiting - count recent failed attempts for this kid
     const { count: failedAttempts } = await supabase
       .from('login_attempts')
       .select('*', { count: 'exact', head: true })
-      .eq('kid_id', kidId)
+      .eq('kid_id', kid.id)
       .eq('success', false)
       .gte('attempted_at', lockoutWindow)
 
     if (failedAttempts !== null && failedAttempts >= MAX_ATTEMPTS) {
       // Also log this blocked attempt
       await supabase.from('login_attempts').insert({
-        kid_id: kidId,
+        kid_id: kid.id,
         ip_address: ipAddress,
         success: false,
       })
@@ -78,31 +114,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get kid and verify PIN
-    const { data: kid, error: kidError } = await supabase
-      .from('kids')
-      .select('id, name, pin_hash')
-      .eq('id', kidId)
-      .single()
-
-    if (kidError || !kid) {
-      // Log failed attempt (invalid kid)
-      await supabase.from('login_attempts').insert({
-        kid_id: kidId,
-        ip_address: ipAddress,
-        success: false,
-      })
-
-      return NextResponse.json(
-        { error: 'Kid not found' },
-        { status: 404 }
-      )
-    }
-
     // Check if PIN is set
     if (!kid.pin_hash) {
       return NextResponse.json(
-        { error: 'PIN not set for this child. Please ask a parent to set your PIN.' },
+        { error: 'PIN not set. Please ask a parent to set your PIN.' },
         { status: 400 }
       )
     }
@@ -112,7 +127,7 @@ export async function POST(request: NextRequest) {
     if (pinHash !== kid.pin_hash) {
       // Log failed attempt
       await supabase.from('login_attempts').insert({
-        kid_id: kidId,
+        kid_id: kid.id,
         ip_address: ipAddress,
         success: false,
       })
@@ -122,7 +137,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         {
-          error: 'Incorrect PIN',
+          error: 'Incorrect PIN. Try again.',
           remainingAttempts: Math.max(0, remainingAttempts),
         },
         { status: 401 }
@@ -131,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     // Log successful attempt
     await supabase.from('login_attempts').insert({
-      kid_id: kidId,
+      kid_id: kid.id,
       ip_address: ipAddress,
       success: true,
     })
@@ -145,7 +160,7 @@ export async function POST(request: NextRequest) {
     const { error: sessionError } = await supabase
       .from('kid_sessions')
       .insert({
-        kid_id: kidId,
+        kid_id: kid.id,
         token_hash: tokenHash,
         expires_at: expiresAt.toISOString(),
       })
@@ -162,7 +177,7 @@ export async function POST(request: NextRequest) {
     await supabase
       .from('kids')
       .update({ last_login_at: new Date().toISOString() })
-      .eq('id', kidId)
+      .eq('id', kid.id)
 
     // Set session cookie
     const cookieStore = await cookies()
