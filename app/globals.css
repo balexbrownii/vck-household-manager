@@ -962,6 +962,15 @@ html, body {
   background: var(--color-bg-secondary);
 }
 
+.action-btn-pink {
+  background: #ec4899;
+  color: white;
+}
+
+.action-btn-pink:hover {
+  background: #db2777;
+}
+
 /* Checklist Styles */
 .checklist-item {
   display: flex;

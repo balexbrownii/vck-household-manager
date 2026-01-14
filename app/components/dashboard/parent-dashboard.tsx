@@ -3,7 +3,7 @@ import { Kid, DailyExpectation } from '@/types'
 import KidCard from './kid-card'
 import WeekSelector from './week-selector'
 import { redirect } from 'next/navigation'
-import { Briefcase, Settings, AlertTriangle, BarChart3, FileText } from 'lucide-react'
+import { Briefcase, Settings, AlertTriangle, BarChart3, FileText, Users } from 'lucide-react'
 
 export default async function ParentDashboard() {
   const supabase = await createClient()
@@ -208,6 +208,10 @@ export default async function ParentDashboard() {
           <a href="/charts" className="action-btn action-btn-gray">
             <FileText className="w-4 h-4" />
             Print Charts
+          </a>
+          <a href="/dashboard/kids" className="action-btn action-btn-pink">
+            <Users className="w-4 h-4" />
+            Manage Kids
           </a>
         </div>
       </div>
