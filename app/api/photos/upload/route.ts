@@ -147,6 +147,54 @@ export async function POST(request: NextRequest) {
       aiResult = await processSubmission(photoRecord.id)
     }
 
+    // Get kid name for the message
+    const { data: kid } = await supabase
+      .from('kids')
+      .select('name')
+      .eq('id', kidId)
+      .single()
+
+    const kidName = kid?.name || 'Your child'
+    const entityLabel = entityType === 'gig' ? 'gig' : entityType === 'chore' ? 'chore' : 'expectation'
+
+    // Get entity name if it's a gig
+    let entityName = entityLabel
+    if (entityType === 'gig') {
+      const { data: gig } = await supabase
+        .from('gigs')
+        .select('title')
+        .eq('id', entityId)
+        .single()
+      if (gig?.title) entityName = gig.title
+    }
+
+    // Send notification to parents (if not auto-approved by AI)
+    const finalStatus = aiResult?.status || initialStatus
+    if (finalStatus === 'pending_review') {
+      await supabase.from('family_messages').insert({
+        sender_type: 'kid',
+        sender_kid_id: kidId,
+        recipient_type: 'parent',
+        message_type: 'approval_request',
+        subject: `${kidName} submitted ${entityLabel}`,
+        body: `${kidName} has submitted "${entityName}" for review. Please check and approve or provide feedback.`,
+        related_entity_type: entityType,
+        related_entity_id: entityId,
+        action_required: true
+      })
+
+      // Log to activity feed
+      await supabase.from('activity_feed').insert({
+        kid_id: kidId,
+        actor_type: 'kid',
+        actor_id: kidId,
+        action: 'submission_uploaded',
+        entity_type: entityType,
+        entity_id: entityId,
+        message: `Submitted "${entityName}" for review`
+      })
+    }
+
     return NextResponse.json({
       success: true,
       photo: {

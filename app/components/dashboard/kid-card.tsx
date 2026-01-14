@@ -4,6 +4,8 @@ import { Kid, DailyExpectation } from '@/types'
 import DailyChecklist from './daily-checklist'
 import ScreenTimeStatus from './screen-time-status'
 import StarTracker from './star-tracker'
+import QuickAddChore from './quick-add-chore'
+import QuickAddExpectation from './quick-add-expectation'
 import Link from 'next/link'
 import { ChevronRight, Star } from 'lucide-react'
 
@@ -58,9 +60,15 @@ export default function KidCard({
 
       {/* Daily expectations checklist */}
       <div className="mb-5">
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          Today&apos;s Expectations
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            Today&apos;s Expectations
+          </h3>
+          <div className="flex items-center gap-1">
+            <QuickAddExpectation kidId={kid.id} kidName={kid.name} />
+            <QuickAddChore kidId={kid.id} kidName={kid.name} />
+          </div>
+        </div>
         <DailyChecklist
           kidId={kid.id}
           date={new Date().toISOString().split('T')[0] || ''}

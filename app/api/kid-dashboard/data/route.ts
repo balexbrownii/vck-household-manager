@@ -55,6 +55,8 @@ export async function GET(request: NextRequest) {
       rotationStateResult,
       assignmentsResult,
       gigsResult,
+      claimedGigsResult,
+      pendingSubmissionsResult,
       timeoutResult,
       mealsResult,
       expectationRulesResult,
@@ -88,6 +90,35 @@ export async function GET(request: NextRequest) {
         .lte('tier', kid.max_gig_tier)
         .order('stars', { ascending: false })
         .limit(5),
+
+      // Claimed gigs (active - not yet fully approved or with revision needed)
+      supabase
+        .from('claimed_gigs')
+        .select(`
+          id,
+          gig_id,
+          claimed_at,
+          completed_at,
+          inspection_status,
+          stars_awarded,
+          parent_notes,
+          gigs (
+            id,
+            title,
+            stars
+          )
+        `)
+        .eq('kid_id', kid.id)
+        .or('inspection_status.is.null,inspection_status.eq.revision_requested')
+        .order('claimed_at', { ascending: false }),
+
+      // Pending photo submissions
+      supabase
+        .from('completion_photos')
+        .select('id, task_type, task_description, status, created_at, review_notes')
+        .eq('kid_id', kid.id)
+        .in('status', ['pending_review', 'revision_requested'])
+        .order('created_at', { ascending: false }),
 
       // Pending timeout
       supabase
@@ -156,6 +187,22 @@ export async function GET(request: NextRequest) {
       }
     }).filter(m => m.recipe_title)
 
+    // Format claimed gigs
+    const claimedGigs = (claimedGigsResult.data || []).map(cg => {
+      const gig = cg.gigs as unknown as { id: string; title: string; stars: number } | null
+      return {
+        id: cg.id,
+        gig_id: cg.gig_id,
+        title: gig?.title || 'Unknown Gig',
+        stars: gig?.stars || 0,
+        claimed_at: cg.claimed_at,
+        completed_at: cg.completed_at,
+        inspection_status: cg.inspection_status,
+        stars_awarded: cg.stars_awarded,
+        parent_notes: cg.parent_notes,
+      }
+    })
+
     return NextResponse.json({
       kid,
       expectations: expectationsResult.data || null,
@@ -167,6 +214,8 @@ export async function GET(request: NextRequest) {
       } : null,
       tidyUpItems,
       availableGigs: gigsResult.data || [],
+      claimedGigs,
+      pendingSubmissions: pendingSubmissionsResult.data || [],
       pendingTimeout: timeoutResult.data?.[0] || null,
       todaysMeals: meals,
     })

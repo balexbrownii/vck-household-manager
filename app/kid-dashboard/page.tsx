@@ -18,9 +18,15 @@ import {
   AlertTriangle,
   UtensilsCrossed,
   Tv,
+  Target,
+  ImageIcon,
+  RefreshCw,
+  HourglassIcon,
 } from 'lucide-react'
 import { ExpandableTask } from '@/components/ui/expandable-task'
 import { LoadingSpinner } from '@/components/ui/shared'
+import KidNotifications from '@/components/messaging/kid-notifications'
+import KidQuickMessage from '@/components/messaging/kid-quick-message'
 
 interface Kid {
   id: string
@@ -72,6 +78,27 @@ interface PlannedMeal {
   recipe_id: string
 }
 
+interface ClaimedGig {
+  id: string
+  gig_id: string
+  title: string
+  stars: number
+  claimed_at: string
+  completed_at: string | null
+  inspection_status: string | null
+  stars_awarded: number | null
+  parent_notes: string | null
+}
+
+interface PendingSubmission {
+  id: string
+  task_type: string
+  task_description: string
+  status: string
+  created_at: string
+  review_notes: string | null
+}
+
 export default function KidDashboardPage() {
   const router = useRouter()
   const [kid, setKid] = useState<Kid | null>(null)
@@ -79,6 +106,8 @@ export default function KidDashboardPage() {
   const [choreAssignment, setChoreAssignment] = useState<ChoreAssignment | null>(null)
   const [tidyUpItems, setTidyUpItems] = useState<string[]>([])
   const [availableGigs, setAvailableGigs] = useState<AvailableGig[]>([])
+  const [claimedGigs, setClaimedGigs] = useState<ClaimedGig[]>([])
+  const [pendingSubmissions, setPendingSubmissions] = useState<PendingSubmission[]>([])
   const [pendingTimeout, setPendingTimeout] = useState<PendingTimeout | null>(null)
   const [todaysMeals, setTodaysMeals] = useState<PlannedMeal[]>([])
   const [loading, setLoading] = useState(true)
@@ -105,6 +134,8 @@ export default function KidDashboardPage() {
       setChoreAssignment(data.choreAssignment)
       setTidyUpItems(data.tidyUpItems || [])
       setAvailableGigs(data.availableGigs || [])
+      setClaimedGigs(data.claimedGigs || [])
+      setPendingSubmissions(data.pendingSubmissions || [])
       setPendingTimeout(data.pendingTimeout)
       setTodaysMeals(data.todaysMeals || [])
     } catch {
@@ -255,6 +286,152 @@ export default function KidDashboardPage() {
                   {completingTimeout ? 'Completing...' : 'I Finished My Timeout'}
                 </button>
               </div>
+            </div>
+          </section>
+        )}
+
+        {/* Notifications from Parents */}
+        <KidNotifications />
+
+        {/* My Current Gig - Show claimed gigs status */}
+        {claimedGigs.length > 0 && (
+          <section className="kid-section">
+            <h2 className="kid-section-title">
+              <Target className="w-5 h-5 text-purple-500" />
+              My Current Gig{claimedGigs.length > 1 ? 's' : ''}
+            </h2>
+            <div className="space-y-3">
+              {claimedGigs.map((gig) => {
+                const isPending = !gig.completed_at
+                const isAwaitingReview = gig.completed_at && !gig.inspection_status
+                const needsRevision = gig.inspection_status === 'revision_requested'
+
+                return (
+                  <div
+                    key={gig.id}
+                    className={`p-4 rounded-xl border-2 ${
+                      needsRevision
+                        ? 'border-amber-300 bg-amber-50'
+                        : isAwaitingReview
+                        ? 'border-blue-300 bg-blue-50'
+                        : 'border-purple-200 bg-purple-50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-900">{gig.title}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                          <span className="text-sm text-gray-600">{gig.stars} stars</span>
+                        </div>
+                      </div>
+                      <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${
+                        needsRevision
+                          ? 'bg-amber-200 text-amber-800'
+                          : isAwaitingReview
+                          ? 'bg-blue-200 text-blue-800'
+                          : 'bg-purple-200 text-purple-800'
+                      }`}>
+                        {needsRevision ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            Fix Needed
+                          </>
+                        ) : isAwaitingReview ? (
+                          <>
+                            <HourglassIcon className="w-3.5 h-3.5" />
+                            Awaiting Review
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-3.5 h-3.5" />
+                            In Progress
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {needsRevision && gig.parent_notes && (
+                      <div className="mt-3 p-3 bg-white rounded-lg border border-amber-200">
+                        <p className="text-xs font-medium text-amber-700 mb-1">Parent feedback:</p>
+                        <p className="text-sm text-gray-700">{gig.parent_notes}</p>
+                      </div>
+                    )}
+                    {isPending && (
+                      <a
+                        href="/kid-dashboard/submit"
+                        className="mt-3 block w-full py-2 text-center bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 active:scale-[0.98] transition-all"
+                      >
+                        Submit Completion Photo
+                      </a>
+                    )}
+                    {needsRevision && (
+                      <a
+                        href="/kid-dashboard/submit"
+                        className="mt-3 block w-full py-2 text-center bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 active:scale-[0.98] transition-all"
+                      >
+                        Resubmit Photo
+                      </a>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* My Submissions - Show pending photo reviews */}
+        {pendingSubmissions.length > 0 && (
+          <section className="kid-section">
+            <h2 className="kid-section-title">
+              <ImageIcon className="w-5 h-5 text-teal-500" />
+              My Submissions
+            </h2>
+            <div className="space-y-2">
+              {pendingSubmissions.map((submission) => {
+                const needsRevision = submission.status === 'revision_requested'
+
+                return (
+                  <div
+                    key={submission.id}
+                    className={`flex items-center gap-3 p-3 rounded-xl ${
+                      needsRevision ? 'bg-amber-50 border border-amber-200' : 'bg-teal-50'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      needsRevision ? 'bg-amber-200' : 'bg-teal-200'
+                    }`}>
+                      {needsRevision ? (
+                        <RefreshCw className="w-5 h-5 text-amber-700" />
+                      ) : (
+                        <HourglassIcon className="w-5 h-5 text-teal-700" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 truncate">
+                        {submission.task_description}
+                      </div>
+                      <div className={`text-xs font-medium ${
+                        needsRevision ? 'text-amber-700' : 'text-teal-700'
+                      }`}>
+                        {needsRevision ? 'Revision requested' : 'Pending review'}
+                      </div>
+                      {needsRevision && submission.review_notes && (
+                        <p className="text-xs text-gray-600 mt-1 italic">
+                          &quot;{submission.review_notes}&quot;
+                        </p>
+                      )}
+                    </div>
+                    {needsRevision && (
+                      <a
+                        href="/kid-dashboard/submit"
+                        className="px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 active:scale-95 transition-all"
+                      >
+                        Fix
+                      </a>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </section>
         )}
@@ -518,6 +695,7 @@ export default function KidDashboardPage() {
             </div>
             <span className="quick-action-label">My Stars</span>
           </a>
+          <KidQuickMessage onMessageSent={loadDashboard} />
         </div>
       </div>
     </main>

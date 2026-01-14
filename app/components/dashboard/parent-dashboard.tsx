@@ -1,9 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
-import { Kid, DailyExpectation } from '@/types'
+import { Kid, DailyExpectation, MealPlanEntryWithRecipe } from '@/types'
 import KidCard from './kid-card'
 import WeekSelector from './week-selector'
+import NeedsAttentionBanner from './needs-attention-banner'
+import TodaysMealsCard from './todays-meals-card'
+import ActivityFeed from './activity-feed'
 import { redirect } from 'next/navigation'
-import { Briefcase, Settings, AlertTriangle, BarChart3, FileText, Users } from 'lucide-react'
+import { Briefcase, Settings, AlertTriangle, BarChart3, FileText, Users, Utensils } from 'lucide-react'
 
 export default async function ParentDashboard() {
   const supabase = await createClient()
@@ -113,6 +116,40 @@ export default async function ParentDashboard() {
     })
   })
 
+  // Fetch today's meals (planned from recipes)
+  const { data: todaysMeals } = await supabase
+    .from('meal_plan_entries')
+    .select('*, recipes(*)')
+    .eq('planned_date', today)
+    .order('meal_type')
+
+  // Fetch today's ad-hoc meals
+  const { data: adhocMeals } = await supabase
+    .from('adhoc_meals')
+    .select('*')
+    .eq('planned_date', today)
+    .order('meal_type')
+
+  // Fetch pending gig reviews (claimed but not inspected)
+  const { data: pendingGigReviews } = await supabase
+    .from('claimed_gigs')
+    .select('*, gigs(title), kids(name)')
+    .is('inspection_status', null)
+    .not('completed_at', 'is', null)
+
+  // Fetch pending photo reviews
+  const { data: pendingPhotoReviews } = await supabase
+    .from('completion_photos')
+    .select('*, kids(name)')
+    .eq('status', 'pending_review')
+
+  // Fetch recent activity (unread by parent)
+  const { data: recentActivity } = await supabase
+    .from('activity_feed')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(5)
+
   // Create a map of expectations by kid_id, with defaults for kids without records
   const expectationsMap = new Map<string, DailyExpectation>()
   expectations?.forEach((exp) => {
@@ -167,12 +204,77 @@ export default async function ParentDashboard() {
     }
   })
 
+  // Build attention items
+  interface AttentionItem {
+    type: 'gig_review' | 'timeout_pending' | 'expectations_incomplete' | 'photo_review'
+    kidId?: string
+    kidName: string
+    message: string
+    link: string
+    count?: number
+  }
+
+  const attentionItems: AttentionItem[] = []
+
+  // Add pending gig reviews
+  if (pendingGigReviews && pendingGigReviews.length > 0) {
+    const gigsByKid = new Map<string, { name: string; count: number }>()
+    pendingGigReviews.forEach((gig) => {
+      const kidName = (gig.kids as { name: string })?.name || 'Unknown'
+      const existing = gigsByKid.get(gig.kid_id)
+      if (existing) {
+        existing.count++
+      } else {
+        gigsByKid.set(gig.kid_id, { name: kidName, count: 1 })
+      }
+    })
+
+    gigsByKid.forEach((data, kidId) => {
+      attentionItems.push({
+        type: 'gig_review',
+        kidId,
+        kidName: data.name,
+        message: `${data.name} has ${data.count} gig${data.count > 1 ? 's' : ''} awaiting inspection`,
+        link: '/gigs/inspect',
+        count: data.count,
+      })
+    })
+  }
+
+  // Add pending photo reviews
+  if (pendingPhotoReviews && pendingPhotoReviews.length > 0) {
+    attentionItems.push({
+      type: 'photo_review',
+      kidName: 'Kids',
+      message: `${pendingPhotoReviews.length} photo${pendingPhotoReviews.length > 1 ? 's' : ''} awaiting review`,
+      link: '/dashboard/review',
+      count: pendingPhotoReviews.length,
+    })
+  }
+
+  // Add kids with incomplete expectations (no progress at all today)
+  const kidsWithNoProgress = kids.filter((kid) => {
+    const exp = expectationsMap.get(kid.id)
+    if (!exp) return true
+    return !exp.exercise_complete && !exp.reading_complete && !exp.tidy_up_complete && !exp.daily_chore_complete
+  })
+
+  kidsWithNoProgress.forEach((kid) => {
+    attentionItems.push({
+      type: 'expectations_incomplete',
+      kidId: kid.id,
+      kidName: kid.name,
+      message: `${kid.name} hasn't started expectations`,
+      link: `/kid/${kid.id}`,
+    })
+  })
+
   // Format today's date nicely
   const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' }
   const formattedDate = new Date().toLocaleDateString('en-US', dateOptions)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Dashboard Header */}
       <div className="dashboard-header">
         <div>
@@ -182,6 +284,18 @@ export default async function ParentDashboard() {
           </p>
         </div>
         <WeekSelector currentWeek={currentWeek} />
+      </div>
+
+      {/* Needs Attention Banner */}
+      <NeedsAttentionBanner items={attentionItems} />
+
+      {/* Today's Overview - Meals and Activity side by side on larger screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TodaysMealsCard
+          meals={(todaysMeals as MealPlanEntryWithRecipe[]) || []}
+          adhocMeals={adhocMeals || []}
+        />
+        <ActivityFeed initialActivity={recentActivity || []} maxItems={5} />
       </div>
 
       {/* Kid Cards Grid */}
@@ -209,6 +323,10 @@ export default async function ParentDashboard() {
           <a href="/gigs/inspect" className="action-btn action-btn-green">
             <Settings className="w-4 h-4" />
             Inspect Gigs
+          </a>
+          <a href="/meals" className="action-btn action-btn-orange">
+            <Utensils className="w-4 h-4" />
+            Meal Planning
           </a>
           <a href="/timeout" className="action-btn action-btn-red">
             <AlertTriangle className="w-4 h-4" />

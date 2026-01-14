@@ -169,6 +169,61 @@ export async function POST(
         .eq('date', new Date().toISOString().split('T')[0])
     }
 
+    // Send notification message to kid
+    const entityLabel = photo.entity_type === 'gig' ? 'gig' : photo.entity_type === 'chore' ? 'chore' : 'task'
+
+    if (action === 'approve') {
+      await supabase.from('family_messages').insert({
+        sender_type: 'parent',
+        sender_parent_id: user.id,
+        recipient_type: 'kid',
+        recipient_kid_id: photo.kid_id,
+        message_type: 'notification',
+        subject: 'Submission Approved!',
+        body: feedback
+          ? `Your ${entityLabel} submission was approved! ${feedback}`
+          : `Your ${entityLabel} submission was approved! Great work!`,
+        related_entity_type: photo.entity_type,
+        related_entity_id: photo.entity_id
+      })
+
+      // Log to activity feed
+      await supabase.from('activity_feed').insert({
+        kid_id: photo.kid_id,
+        actor_type: 'parent',
+        actor_id: user.id,
+        action: 'submission_approved',
+        entity_type: photo.entity_type,
+        entity_id: photo.entity_id,
+        message: `${entityLabel} submission approved`
+      })
+    } else {
+      await supabase.from('family_messages').insert({
+        sender_type: 'parent',
+        sender_parent_id: user.id,
+        recipient_type: 'kid',
+        recipient_kid_id: photo.kid_id,
+        message_type: 'notification',
+        subject: 'Submission Needs Work',
+        body: feedback
+          ? `Your ${entityLabel} submission needs revision: ${feedback}`
+          : `Your ${entityLabel} submission needs some more work. Please try again.`,
+        related_entity_type: photo.entity_type,
+        related_entity_id: photo.entity_id
+      })
+
+      // Log to activity feed
+      await supabase.from('activity_feed').insert({
+        kid_id: photo.kid_id,
+        actor_type: 'parent',
+        actor_id: user.id,
+        action: 'submission_rejected',
+        entity_type: photo.entity_type,
+        entity_id: photo.entity_id,
+        message: `${entityLabel} submission needs revision${feedback ? ': ' + feedback : ''}`
+      })
+    }
+
     return NextResponse.json({
       success: true,
       status: newStatus,

@@ -13,6 +13,7 @@ import {
   UtensilsCrossed,
   Star
 } from 'lucide-react'
+import MessageBadge from '../messaging/message-badge'
 
 export default function TopNav() {
   const pathname = usePathname()
@@ -61,6 +62,9 @@ export default function TopNav() {
               )
             })}
           </div>
+
+          {/* Messages */}
+          <MessageBadge />
         </div>
       </div>
     </nav>

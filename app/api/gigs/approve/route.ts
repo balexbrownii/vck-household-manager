@@ -90,6 +90,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Send notification message to kid
+    await supabase.from('family_messages').insert({
+      sender_type: 'parent',
+      sender_parent_id: user.id,
+      recipient_type: 'kid',
+      recipient_kid_id: claimedGig.kid_id,
+      message_type: 'notification',
+      subject: 'Gig Approved!',
+      body: `Great job! Your "${gig.title}" gig was approved! You earned ${gig.stars} stars!`,
+      related_entity_type: 'gig',
+      related_entity_id: claimedGigId
+    })
+
+    // Log to activity feed
+    await supabase.from('activity_feed').insert({
+      kid_id: claimedGig.kid_id,
+      actor_type: 'parent',
+      actor_id: user.id,
+      action: 'gig_approved',
+      entity_type: 'gig',
+      entity_id: claimedGigId,
+      message: `Approved "${gig.title}" - awarded ${gig.stars} stars`
+    })
+
     return NextResponse.json(updatedClaim, { status: 200 })
   } catch (error) {
     console.error('Unexpected error:', error)

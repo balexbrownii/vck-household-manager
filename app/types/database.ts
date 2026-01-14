@@ -152,6 +152,12 @@ export interface ScreenTimeSession {
   total_minutes_allowed: number
   minutes_used: number
   is_weekend: boolean
+  // Override tracking fields
+  manually_unlocked: boolean
+  manually_unlocked_by: string | null
+  manually_locked: boolean
+  manually_locked_by: string | null
+  override_reason: string | null
   created_at: string
   updated_at: string
 }
@@ -177,6 +183,33 @@ export interface UserProfile {
   role: 'parent' | 'admin'
   created_at: string
   updated_at: string
+}
+
+// ============================================
+// ACTIVITY & NOTIFICATION TYPES
+// ============================================
+
+export interface ActivityFeedItem {
+  id: string
+  kid_id: string
+  actor_type: 'kid' | 'parent' | 'system'
+  actor_id: string | null
+  action: string
+  entity_type: string | null
+  entity_id: string | null
+  message: string
+  read_by_parent: boolean
+  read_by_kid: boolean
+  created_at: string
+}
+
+export interface StarAdjustment {
+  id: string
+  kid_id: string
+  stars: number
+  reason: string
+  adjusted_by: string
+  created_at: string
 }
 
 // ============================================
