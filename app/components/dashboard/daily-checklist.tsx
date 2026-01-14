@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { DailyExpectation } from '@/types'
 import ChecklistToggle from './checklist-toggle'
 import AdhocItemToggle from './adhoc-item-toggle'
@@ -50,34 +51,66 @@ export default function DailyChecklist({
   choreChecklist,
   pendingTimeout,
 }: DailyChecklistProps) {
+  const router = useRouter()
   const [adhocExpectations, setAdhocExpectations] = useState<AdhocExpectation[]>([])
   const [adhocChores, setAdhocChores] = useState<AdhocChore[]>([])
 
-  useEffect(() => {
-    // Fetch ad-hoc expectations and chores for this kid and date
-    const fetchAdhocItems = async () => {
-      try {
-        const [expRes, choreRes] = await Promise.all([
-          fetch(`/api/adhoc-expectations?kidId=${kidId}&date=${date}`),
-          fetch(`/api/adhoc-chores?kidId=${kidId}&date=${date}`)
-        ])
+  const fetchAdhocItems = useCallback(async () => {
+    try {
+      const [expRes, choreRes] = await Promise.all([
+        fetch(`/api/adhoc-expectations?kidId=${kidId}&date=${date}`),
+        fetch(`/api/adhoc-chores?kidId=${kidId}&date=${date}`)
+      ])
 
-        if (expRes.ok) {
-          const data = await expRes.json()
-          setAdhocExpectations(data.expectations || [])
-        }
-
-        if (choreRes.ok) {
-          const data = await choreRes.json()
-          setAdhocChores(data.chores || [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch adhoc items:', error)
+      if (expRes.ok) {
+        const data = await expRes.json()
+        setAdhocExpectations(data.expectations || [])
       }
-    }
 
-    fetchAdhocItems()
+      if (choreRes.ok) {
+        const data = await choreRes.json()
+        setAdhocChores(data.chores || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch adhoc items:', error)
+    }
   }, [kidId, date])
+
+  useEffect(() => {
+    fetchAdhocItems()
+  }, [fetchAdhocItems])
+
+  const handleDeleteExpectation = async (id: string) => {
+    try {
+      const res = await fetch('/api/adhoc-expectations', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expectationId: id })
+      })
+      if (res.ok) {
+        setAdhocExpectations(prev => prev.filter(e => e.id !== id))
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('Failed to delete expectation:', error)
+    }
+  }
+
+  const handleDeleteChore = async (id: string) => {
+    try {
+      const res = await fetch('/api/adhoc-chores', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ choreId: id })
+      })
+      if (res.ok) {
+        setAdhocChores(prev => prev.filter(c => c.id !== id))
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('Failed to delete chore:', error)
+    }
+  }
   // Build the chore description with room name and tasks
   const choreDescription = roomName
     ? `${roomName}${choreChecklist && choreChecklist.length > 0 ? ': ' + choreChecklist.join(', ') : ''}`
@@ -129,6 +162,8 @@ export default function DailyChecklist({
           resetCount={pendingTimeout.reset_count}
           servingStartedAt={pendingTimeout.serving_started_at}
           servedAt={pendingTimeout.served_at}
+          isParent={true}
+          onDismiss={() => router.refresh()}
         />
       )}
 
@@ -158,6 +193,7 @@ export default function DailyChecklist({
           description={item.description}
           isComplete={item.completed}
           icon={item.icon}
+          onDelete={() => handleDeleteExpectation(item.id)}
         />
       ))}
 
@@ -171,6 +207,7 @@ export default function DailyChecklist({
           description={item.description}
           isComplete={item.completed}
           checklist={item.checklist}
+          onDelete={() => handleDeleteChore(item.id)}
         />
       ))}
     </div>

@@ -58,6 +58,8 @@ export default function KidCard({
         </div>
         <ScreenTimeStatus
           allExpectationsComplete={expectations.all_complete}
+          kidId={kid.id}
+          isParent={true}
         />
       </div>
 

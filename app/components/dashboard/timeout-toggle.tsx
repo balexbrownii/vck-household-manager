@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, Play, CheckCircle2, Clock, ChevronDown, ChevronUp, X, Hourglass } from 'lucide-react'
+import { AlertTriangle, Play, CheckCircle2, Clock, ChevronDown, ChevronUp, X, Hourglass, Trash2 } from 'lucide-react'
 
 interface TimeoutToggleProps {
   timeoutId: string
@@ -11,6 +11,8 @@ interface TimeoutToggleProps {
   resetCount: number
   servingStartedAt?: string | null
   servedAt?: string | null
+  isParent?: boolean
+  onDismiss?: () => void
 }
 
 export default function TimeoutToggle({
@@ -20,8 +22,11 @@ export default function TimeoutToggle({
   resetCount,
   servingStartedAt,
   servedAt,
+  isParent = false,
+  onDismiss,
 }: TimeoutToggleProps) {
   const [loading, setLoading] = useState(false)
+  const [dismissing, setDismissing] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [isServing, setIsServing] = useState(!!servingStartedAt && !servedAt)
   const [isPendingApproval, setIsPendingApproval] = useState(!!servedAt)
@@ -111,17 +116,83 @@ export default function TimeoutToggle({
     }
   }
 
+  const handleDismiss = async () => {
+    setDismissing(true)
+    try {
+      const response = await fetch('/api/timeout/dismiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timeoutId }),
+      })
+
+      if (response.ok) {
+        if (onDismiss) onDismiss()
+        router.refresh()
+      } else {
+        console.error('Failed to dismiss timeout')
+      }
+    } catch (error) {
+      console.error('Error dismissing timeout:', error)
+    } finally {
+      setDismissing(false)
+    }
+  }
+
+  const handleApprove = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/timeout/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timeoutId }),
+      })
+
+      if (response.ok) {
+        if (onDismiss) onDismiss()
+        router.refresh()
+      } else {
+        console.error('Failed to approve timeout')
+      }
+    } catch (error) {
+      console.error('Error approving timeout:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Pending parent approval state
   if (isPendingApproval || servedAt) {
     return (
-      <div className="w-full flex items-start gap-3 p-3 rounded-lg border-2 border-amber-300 bg-amber-50">
-        <div className="flex-shrink-0 mt-1">
-          <Hourglass className="w-5 h-5 text-amber-600" />
+      <div className="w-full rounded-lg border-2 border-amber-300 bg-amber-50">
+        <div className="flex items-start gap-3 p-3">
+          <div className="flex-shrink-0 mt-1">
+            <Hourglass className="w-5 h-5 text-amber-600" />
+          </div>
+          <div className="flex-1 text-left">
+            <div className="font-medium text-amber-700">Timeout Served</div>
+            <div className="text-sm text-amber-600">
+              {isParent ? 'Approve to clear timeout' : 'Waiting for parent approval'}
+            </div>
+          </div>
         </div>
-        <div className="flex-1 text-left">
-          <div className="font-medium text-amber-700">Timeout Served</div>
-          <div className="text-sm text-amber-600">Waiting for parent approval</div>
-        </div>
+        {isParent && (
+          <div className="px-3 pb-3 flex gap-2">
+            <button
+              onClick={handleApprove}
+              disabled={loading}
+              className="flex-1 py-2 px-4 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Approving...' : 'Approve'}
+            </button>
+            <button
+              onClick={handleDismiss}
+              disabled={dismissing}
+              className="py-2 px-4 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 disabled:opacity-50 transition-colors"
+            >
+              {dismissing ? '...' : 'Cancel'}
+            </button>
+          </div>
+        )}
       </div>
     )
   }
@@ -131,7 +202,7 @@ export default function TimeoutToggle({
     const timerDone = timeRemaining === 0
 
     return (
-      <div className="w-full rounded-lg border-2 border-red-300 bg-red-50 overflow-hidden">
+      <div className="w-full rounded-lg border-2 border-red-300 bg-red-50 overflow-hidden relative group">
         <div className="p-3">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
@@ -149,7 +220,7 @@ export default function TimeoutToggle({
           </div>
         </div>
 
-        {timerDone && (
+        {timerDone && !isParent && (
           <div className="px-3 pb-3 border-t border-red-200 pt-3">
             <button
               onClick={handleMarkServed}
@@ -160,13 +231,25 @@ export default function TimeoutToggle({
             </button>
           </div>
         )}
+
+        {/* Parent dismiss button - shows on hover */}
+        {isParent && (
+          <button
+            onClick={handleDismiss}
+            disabled={dismissing}
+            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-sm disabled:opacity-50"
+            title="Cancel timeout"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     )
   }
 
   // Default: Not started - expandable
   return (
-    <div className={`w-full rounded-lg border-2 transition-all ${
+    <div className={`w-full rounded-lg border-2 transition-all relative group ${
       expanded ? 'border-red-400 bg-red-50' : 'border-red-300 bg-red-50'
     }`}>
       <button
@@ -192,7 +275,7 @@ export default function TimeoutToggle({
         </div>
       </button>
 
-      {expanded && (
+      {expanded && !isParent && (
         <div className="px-3 pb-3 border-t border-red-200 pt-3">
           <p className="text-sm text-red-600 mb-3">
             Go to your timeout spot. When you're ready, start the timer.
@@ -214,6 +297,18 @@ export default function TimeoutToggle({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Parent dismiss button - shows on hover */}
+      {isParent && (
+        <button
+          onClick={handleDismiss}
+          disabled={dismissing}
+          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-sm disabled:opacity-50"
+          title="Cancel timeout"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
       )}
     </div>
   )

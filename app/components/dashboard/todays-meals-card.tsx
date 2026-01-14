@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Utensils, Coffee, Sun, Moon, ChevronRight, Plus } from 'lucide-react'
+import { Utensils, Coffee, Sun, Moon, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { MealPlanEntryWithRecipe } from '@/types'
 import QuickAddMeal from './quick-add-meal'
 
@@ -20,6 +22,26 @@ interface TodaysMealsCardProps {
 }
 
 export default function TodaysMealsCard({ meals, adhocMeals = [], onRefresh }: TodaysMealsCardProps) {
+  const router = useRouter()
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const handleDeleteAdhocMeal = async (id: string) => {
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/meals/adhoc?mealId=${id}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        if (onRefresh) onRefresh()
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('Failed to delete meal:', error)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const getMealIcon = (mealType: string) => {
     switch (mealType) {
       case 'breakfast':
@@ -123,7 +145,7 @@ export default function TodaysMealsCard({ meals, adhocMeals = [], onRefresh }: T
           {adhocMeals.map((meal) => (
             <div
               key={meal.id}
-              className="flex items-center gap-3 p-2 rounded-lg bg-orange-50/50 hover:bg-orange-50 transition-colors"
+              className="relative group flex items-center gap-3 p-2 rounded-lg bg-orange-50/50 hover:bg-orange-50 transition-colors"
             >
               <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-700 flex-shrink-0">
                 {getMealIcon(meal.meal_type)}
@@ -142,6 +164,15 @@ export default function TodaysMealsCard({ meals, adhocMeals = [], onRefresh }: T
                   </div>
                 )}
               </div>
+              {/* Delete button - shows on hover */}
+              <button
+                onClick={() => handleDeleteAdhocMeal(meal.id)}
+                disabled={deletingId === meal.id}
+                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
+                title="Delete meal"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
             </div>
           ))}
         </div>
