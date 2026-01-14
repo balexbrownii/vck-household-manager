@@ -69,9 +69,10 @@ export default function QuickAddChore({ kidId, kidName, onChoreAdded }: QuickAdd
       <button
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+        title="Add a one-time chore with checklist"
       >
-        <Plus className="w-4 h-4" />
-        Add Task
+        <ListTodo className="w-4 h-4" />
+        Chore
       </button>
     )
   }

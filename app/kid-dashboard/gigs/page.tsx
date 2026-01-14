@@ -9,6 +9,8 @@ import {
   Clock,
   ChevronRight,
   Filter,
+  Lock,
+  CheckCircle,
 } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui/shared'
 
@@ -34,6 +36,7 @@ export default function GigsPage() {
   const [loading, setLoading] = useState(true)
   const [gigs, setGigs] = useState<Gig[]>([])
   const [filter, setFilter] = useState<'all' | 'quick' | 'medium' | 'big'>('all')
+  const [expectationsComplete, setExpectationsComplete] = useState(false)
 
   useEffect(() => {
     checkSessionAndLoadData()
@@ -50,6 +53,13 @@ export default function GigsPage() {
       }
 
       setKid(sessionData.kid)
+
+      // Check expectations status
+      const expectationsRes = await fetch(`/api/expectations?kidId=${sessionData.kid.id}`)
+      if (expectationsRes.ok) {
+        const expectationsData = await expectationsRes.json()
+        setExpectationsComplete(expectationsData.expectations?.all_complete || false)
+      }
 
       // Load available gigs
       const gigsRes = await fetch('/api/gigs?status=available')
@@ -122,20 +132,49 @@ export default function GigsPage() {
           ))}
         </div>
 
+        {/* Expectations Warning */}
+        {!expectationsComplete && (
+          <div className="bg-orange-500 rounded-xl p-4 mb-4 text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold">Gigs Locked</div>
+                <div className="text-sm text-white/90">
+                  Complete all your daily expectations first to unlock gigs!
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push('/kid-dashboard')}
+              className="mt-3 w-full py-2 bg-white text-orange-600 font-semibold rounded-lg hover:bg-white/90 transition-colors"
+            >
+              Go to Expectations
+            </button>
+          </div>
+        )}
+
         {/* Tier Info */}
-        <div className="bg-white/20 rounded-xl p-3 mb-4 text-white text-sm flex items-center gap-2">
-          <Filter className="w-4 h-4" />
-          <span>Showing Tier {kid.max_gig_tier} and below</span>
-        </div>
+        {expectationsComplete && (
+          <div className="bg-white/20 rounded-xl p-3 mb-4 text-white text-sm flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            <span>Showing Tier {kid.max_gig_tier} and below</span>
+          </div>
+        )}
 
         {/* Gigs List */}
         <div className="space-y-3">
           {filteredGigs.length > 0 ? (
             filteredGigs.map(gig => (
-              <a
+              <div
                 key={gig.id}
-                href={`/kid-dashboard/gigs/${gig.id}`}
-                className="block bg-white rounded-2xl p-4 shadow-lg hover:scale-[1.02] transition-all"
+                onClick={() => expectationsComplete && router.push(`/kid-dashboard/gigs/${gig.id}`)}
+                className={`block bg-white rounded-2xl p-4 shadow-lg transition-all ${
+                  expectationsComplete
+                    ? 'hover:scale-[1.02] cursor-pointer'
+                    : 'opacity-60 cursor-not-allowed'
+                }`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -165,10 +204,14 @@ export default function GigsPage() {
                       <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                       <span className="font-bold text-yellow-700">{gig.stars}</span>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                    {expectationsComplete ? (
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                    ) : (
+                      <Lock className="w-5 h-5 text-orange-400" />
+                    )}
                   </div>
                 </div>
-              </a>
+              </div>
             ))
           ) : (
             <div className="bg-white rounded-2xl p-8 shadow-lg text-center">

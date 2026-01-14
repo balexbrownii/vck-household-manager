@@ -278,7 +278,7 @@ export default async function ParentDashboard() {
       {/* Dashboard Header */}
       <div className="dashboard-header">
         <div>
-          <h1 className="dashboard-title">Family Dashboard</h1>
+          <h1 className="dashboard-title">Brown Family Dashboard</h1>
           <p className="dashboard-subtitle">
             {formattedDate}
           </p>

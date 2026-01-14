@@ -8,6 +8,7 @@ import QuickAddChore from './quick-add-chore'
 import QuickAddExpectation from './quick-add-expectation'
 import QuickAddGig from './quick-add-gig'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ChevronRight, Star, Briefcase } from 'lucide-react'
 
 interface PendingTimeout {
@@ -36,6 +37,12 @@ export default function KidCard({
   choreChecklist,
   pendingTimeout,
 }: KidCardProps) {
+  const router = useRouter()
+
+  const handleRefresh = () => {
+    router.refresh()
+  }
+
   return (
     <div className="parent-kid-card">
       {/* Header with avatar, name, and screen time status */}
@@ -45,8 +52,8 @@ export default function KidCard({
             {kid.name.charAt(0)}
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">{kid.name}</h2>
-            <p className="text-sm text-gray-500">Age {kid.age}</p>
+            <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>{kid.name}</h2>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Age {kid.age}</p>
           </div>
         </div>
         <ScreenTimeStatus
@@ -66,8 +73,8 @@ export default function KidCard({
             Today&apos;s Expectations
           </h3>
           <div className="flex items-center gap-1">
-            <QuickAddExpectation kidId={kid.id} kidName={kid.name} />
-            <QuickAddChore kidId={kid.id} kidName={kid.name} />
+            <QuickAddExpectation kidId={kid.id} kidName={kid.name} onExpectationAdded={handleRefresh} />
+            <QuickAddChore kidId={kid.id} kidName={kid.name} onChoreAdded={handleRefresh} />
           </div>
         </div>
         <DailyChecklist
@@ -87,7 +94,7 @@ export default function KidCard({
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
             Gigs
           </h3>
-          <QuickAddGig kidId={kid.id} kidName={kid.name} />
+          <QuickAddGig kidId={kid.id} kidName={kid.name} onGigAdded={handleRefresh} />
         </div>
         <Link
           href={`/kid/${kid.id}/gigs`}

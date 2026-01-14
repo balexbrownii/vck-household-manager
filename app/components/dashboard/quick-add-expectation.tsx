@@ -76,9 +76,10 @@ export default function QuickAddExpectation({ kidId, kidName, onExpectationAdded
       <button
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 px-3 py-2 text-sm text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+        title="Add a quick task for today"
       >
-        <Plus className="w-4 h-4" />
-        Add Task
+        <Star className="w-4 h-4" />
+        Task
       </button>
     )
   }

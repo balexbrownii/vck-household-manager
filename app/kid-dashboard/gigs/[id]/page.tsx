@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Briefcase,
   Loader2,
+  Lock,
 } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui/shared'
 
@@ -42,6 +43,7 @@ export default function GigDetailPage() {
   const [claiming, setClaiming] = useState(false)
   const [claimed, setClaimed] = useState(false)
   const [error, setError] = useState('')
+  const [expectationsComplete, setExpectationsComplete] = useState(false)
 
   useEffect(() => {
     checkSessionAndLoadGig()
@@ -58,6 +60,13 @@ export default function GigDetailPage() {
       }
 
       setKid(sessionData.kid)
+
+      // Check expectations status
+      const expectationsRes = await fetch(`/api/expectations?kidId=${sessionData.kid.id}`)
+      if (expectationsRes.ok) {
+        const expectationsData = await expectationsRes.json()
+        setExpectationsComplete(expectationsData.expectations?.all_complete || false)
+      }
 
       // Load gig details
       const gigRes = await fetch(`/api/gigs/${gigId}`)
@@ -135,7 +144,7 @@ export default function GigDetailPage() {
     )
   }
 
-  const canClaim = gig.tier <= kid.max_gig_tier && gig.status === 'available' && !claimed
+  const canClaim = gig.tier <= kid.max_gig_tier && gig.status === 'available' && !claimed && expectationsComplete
 
   return (
     <main className="kid-page bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 no-pull-refresh pb-24">
@@ -219,6 +228,16 @@ export default function GigDetailPage() {
               <span>You need to unlock Tier {gig.tier} to claim this gig</span>
             </div>
           )}
+
+          {!expectationsComplete && gig.status === 'available' && !claimed && (
+            <div className="flex items-center gap-2 p-4 bg-orange-100 rounded-lg text-orange-700 mb-4">
+              <Lock className="w-5 h-5" />
+              <div>
+                <span className="font-medium">Gigs Locked</span>
+                <p className="text-sm">Complete all your daily expectations first to unlock gigs!</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Error Message */}
@@ -256,6 +275,14 @@ export default function GigDetailPage() {
                     <span>Claim This Gig</span>
                   </>
                 )}
+              </button>
+            ) : !expectationsComplete && gig.status === 'available' ? (
+              <button
+                onClick={() => router.push('/kid-dashboard')}
+                className="w-full py-4 bg-orange-500 rounded-2xl font-bold text-lg text-white shadow-lg flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors"
+              >
+                <Lock className="w-5 h-5" />
+                <span>Finish Expectations First</span>
               </button>
             ) : (
               <button

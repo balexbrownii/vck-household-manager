@@ -85,6 +85,22 @@ export async function POST(
       )
     }
 
+    // Check if all daily expectations are complete
+    const today = new Date().toISOString().split('T')[0]
+    const { data: expectations } = await supabase
+      .from('daily_expectations')
+      .select('all_complete')
+      .eq('kid_id', kidId)
+      .eq('date', today)
+      .single()
+
+    if (!expectations?.all_complete) {
+      return NextResponse.json(
+        { error: 'You must complete all your daily expectations before claiming a gig' },
+        { status: 403 }
+      )
+    }
+
     // Check if already claimed by anyone (not completed)
     const { data: existingClaim } = await supabase
       .from('claimed_gigs')
