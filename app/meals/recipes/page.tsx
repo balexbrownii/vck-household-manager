@@ -4,7 +4,7 @@ import TopNav from '@/components/nav/top-nav'
 import { RecipeCard } from '@/components/meals'
 import { RecipeWithCategory } from '@/types'
 import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Sparkles } from 'lucide-react'
 
 const CATEGORY_LABELS: Record<string, string> = {
   breakfast: 'Breakfast',
@@ -74,19 +74,28 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center gap-4 mb-4">
-            <Link
-              href="/meals"
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">All Recipes</h1>
-              <p className="text-gray-600 mt-1">
-                {recipes?.length || 0} nutrient-optimized Brown Family Diet recipes
-              </p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/meals"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-600" />
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">All Recipes</h1>
+                <p className="text-gray-600 mt-1">
+                  {recipes?.length || 0} nutrient-optimized Brown Family Diet recipes
+                </p>
+              </div>
             </div>
+            <Link
+              href="/meals/recipes/find"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+            >
+              <Sparkles className="w-5 h-5" />
+              Find New Recipes
+            </Link>
           </div>
         </div>
 

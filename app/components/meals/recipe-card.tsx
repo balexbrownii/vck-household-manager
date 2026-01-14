@@ -1,7 +1,7 @@
 'use client'
 
 import { Recipe } from '@/types'
-import { Clock, Zap, Leaf, Heart, AlertTriangle } from 'lucide-react'
+import { Clock, Zap, Leaf, Heart, Info } from 'lucide-react'
 
 interface RecipeCardProps {
   recipe: Recipe
@@ -24,7 +24,7 @@ export default function RecipeCard({ recipe, onClick, compact = false }: RecipeC
         <div className="flex items-center justify-between">
           <div className="font-medium text-gray-900 truncate">{recipe.title}</div>
           {(hasAlexNotes || hasAlexanderNotes) && (
-            <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 ml-2" />
+            <Info className="w-4 h-4 text-amber-500 flex-shrink-0 ml-2" />
           )}
         </div>
         <div className="text-xs text-gray-500 mt-1 flex gap-3">

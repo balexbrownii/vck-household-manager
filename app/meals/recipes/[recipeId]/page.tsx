@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import TopNav from '@/components/nav/top-nav'
 import { NutrientSummary } from '@/components/meals'
 import Link from 'next/link'
-import { ChevronLeft, Clock, Users, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, Clock, Users, Info } from 'lucide-react'
 
 interface RecipeDetailPageProps {
   params: { recipeId: string }
@@ -84,7 +84,7 @@ export default async function RecipeDetailPage({ params }: RecipeDetailPageProps
                 )}
               </div>
               {hasFamilyNotes && (
-                <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />
+                <Info className="w-6 h-6 text-amber-500 flex-shrink-0" />
               )}
             </div>
 
@@ -107,7 +107,7 @@ export default async function RecipeDetailPage({ params }: RecipeDetailPageProps
           {hasFamilyNotes && (
             <div className="border-t border-gray-100 bg-amber-50 p-4">
               <h3 className="font-semibold text-amber-800 mb-2 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" />
+                <Info className="w-4 h-4" />
                 Family Notes
               </h3>
               <div className="space-y-2">
