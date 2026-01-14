@@ -50,6 +50,7 @@ export default function ScreenTimeTimer({ kid, session }: ScreenTimeTimerProps) 
   if (!session?.unlocked_at) {
     return (
       <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-6 text-center">
+        <h3 className="text-lg font-bold text-gray-900 mb-3">{kid.name}</h3>
         <Clock className="w-8 h-8 text-gray-400 mx-auto mb-3" />
         <p className="text-gray-600 font-medium">Screen time not unlocked</p>
         <p className="text-sm text-gray-500">Complete all expectations first</p>
@@ -65,8 +66,8 @@ export default function ScreenTimeTimer({ kid, session }: ScreenTimeTimerProps) 
 
   return (
     <div className="bg-white rounded-lg border-2 border-primary p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-900">Screen Time Remaining</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-xl font-bold text-gray-900">{kid.name}</h3>
         {session.bonus_minutes_allowed > 0 && (
           <div className="flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">
             <Zap className="w-3 h-3" />
