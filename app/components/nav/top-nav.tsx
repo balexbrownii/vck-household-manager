@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   BarChart3,
   FileText,
-  Settings,
+  ClipboardCheck,
   ClipboardList,
   UtensilsCrossed,
   Star
@@ -27,7 +27,7 @@ export default function TopNav() {
     { href: '/meals', label: 'Meals', icon: UtensilsCrossed },
     { href: '/screen-time', label: 'Screen Time', icon: Zap },
     { href: '/timeout', label: 'Timeouts', icon: AlertTriangle },
-    { href: '/gigs/inspect', label: 'Inspect', icon: Settings },
+    { href: '/dashboard/review', label: 'Review', icon: ClipboardCheck },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/charts', label: 'Charts', icon: FileText },
   ]

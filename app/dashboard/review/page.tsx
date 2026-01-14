@@ -17,6 +17,9 @@ import {
   Sparkles,
   Hand,
   RefreshCw,
+  Eye,
+  ListChecks,
+  AlertCircle,
 } from 'lucide-react'
 
 interface Kid {
@@ -26,13 +29,14 @@ interface Kid {
 
 interface Submission {
   id: string
+  claimedGigId?: string // For direct inspection gigs
   entity_type: 'gig' | 'chore' | 'expectation'
   entity_id: string
-  storage_path: string
+  storage_path: string | null
   notes: string | null
   status: string
   uploaded_at: string
-  photoUrl: string
+  photoUrl: string | null
   kids: Kid
   // AI fields
   ai_passed: boolean | null
@@ -40,10 +44,14 @@ interface Submission {
   ai_confidence: number | null
   escalated_to_parent: boolean
   submission_attempt: number
+  isDirectInspection?: boolean
+  rejectionNotes?: string | null
   entityDetails: {
     title?: string
     name?: string
     stars?: number
+    description?: string
+    checklist?: string[]
   } | null
 }
 
@@ -87,11 +95,28 @@ export default function ReviewPage() {
     setError('')
 
     try {
-      const res = await fetch(`/api/photos/${selectedSubmission.id}/review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, feedback: feedback || undefined }),
-      })
+      let res: Response
+
+      if (selectedSubmission.isDirectInspection) {
+        // Use direct gig approval/rejection API
+        const endpoint = action === 'approve' ? '/api/gigs/approve' : '/api/gigs/reject'
+        res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            claimedGigId: selectedSubmission.claimedGigId,
+            notes: feedback || undefined,
+            reason: feedback || undefined, // for rejection
+          }),
+        })
+      } else {
+        // Use photo review API
+        res = await fetch(`/api/photos/${selectedSubmission.id}/review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, feedback: feedback || undefined }),
+        })
+      }
 
       const data = await res.json()
 
@@ -145,15 +170,30 @@ export default function ReviewPage() {
                 onClick={() => setSelectedSubmission(submission)}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow text-left"
               >
-                {/* Photo Preview */}
+                {/* Photo Preview or Direct Inspection Card */}
                 <div className="aspect-video bg-gray-100 relative">
-                  <img
-                    src={submission.photoUrl}
-                    alt="Submission"
-                    className="w-full h-full object-cover"
-                  />
+                  {submission.photoUrl ? (
+                    <img
+                      src={submission.photoUrl}
+                      alt="Submission"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100">
+                      <Eye className="w-12 h-12 text-purple-400 mb-2" />
+                      <span className="text-sm font-medium text-purple-600">In-Person Inspection</span>
+                      <span className="text-xs text-purple-500">No photo submitted</span>
+                    </div>
+                  )}
                   {/* Badges */}
                   <div className="absolute top-2 left-2 flex flex-col gap-1">
+                    {/* Direct Inspection Badge */}
+                    {submission.isDirectInspection && (
+                      <div className="flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-medium">
+                        <Eye className="w-3 h-3" />
+                        Check in person
+                      </div>
+                    )}
                     {/* AI Passed Badge */}
                     {submission.ai_passed && (
                       <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">
@@ -173,6 +213,13 @@ export default function ReviewPage() {
                       <div className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
                         <RefreshCw className="w-3 h-3" />
                         Attempt #{submission.submission_attempt}
+                      </div>
+                    )}
+                    {/* Previously Rejected Badge */}
+                    {submission.rejectionNotes && (
+                      <div className="flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-medium">
+                        <AlertCircle className="w-3 h-3" />
+                        Previously rejected
                       </div>
                     )}
                   </div>
@@ -236,13 +283,24 @@ export default function ReviewPage() {
         {selectedSubmission && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-              {/* Photo */}
+              {/* Photo or Direct Inspection View */}
               <div className="aspect-video bg-gray-100 relative">
-                <img
-                  src={selectedSubmission.photoUrl}
-                  alt="Submission"
-                  className="w-full h-full object-contain"
-                />
+                {selectedSubmission.photoUrl ? (
+                  <img
+                    src={selectedSubmission.photoUrl}
+                    alt="Submission"
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 p-6">
+                    <Eye className="w-16 h-16 text-purple-400 mb-3" />
+                    <span className="text-lg font-semibold text-purple-700 mb-2">In-Person Inspection Required</span>
+                    <span className="text-sm text-purple-600 text-center">
+                      {selectedSubmission.kids.name} claimed this gig but hasn&apos;t submitted photo proof.
+                      Please check their work in person.
+                    </span>
+                  </div>
+                )}
                 <button
                   onClick={() => {
                     setSelectedSubmission(null)
@@ -322,6 +380,46 @@ export default function ReviewPage() {
                         )}
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Checklist for Direct Inspection */}
+                {selectedSubmission.isDirectInspection && selectedSubmission.entityDetails?.checklist && selectedSubmission.entityDetails.checklist.length > 0 && (
+                  <div className="bg-purple-50 rounded-lg p-4 mb-4 border border-purple-200">
+                    <div className="flex items-center gap-2 text-purple-700 mb-3">
+                      <ListChecks className="w-4 h-4" />
+                      <span className="text-sm font-medium">Inspection Checklist</span>
+                    </div>
+                    <ul className="space-y-2">
+                      {selectedSubmission.entityDetails.checklist.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <div className="w-5 h-5 border-2 border-purple-300 rounded bg-white flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Description for Direct Inspection */}
+                {selectedSubmission.isDirectInspection && selectedSubmission.entityDetails?.description && (
+                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div className="flex items-center gap-2 text-gray-600 mb-2">
+                      <Briefcase className="w-4 h-4" />
+                      <span className="text-sm font-medium">Gig Description</span>
+                    </div>
+                    <p className="text-gray-700 text-sm">{selectedSubmission.entityDetails.description}</p>
+                  </div>
+                )}
+
+                {/* Previous Rejection Notes */}
+                {selectedSubmission.rejectionNotes && (
+                  <div className="bg-orange-50 rounded-lg p-4 mb-4 border border-orange-200">
+                    <div className="flex items-center gap-2 text-orange-700 mb-2">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm font-medium">Previously Rejected</span>
+                    </div>
+                    <p className="text-gray-700 text-sm">{selectedSubmission.rejectionNotes}</p>
                   </div>
                 )}
 

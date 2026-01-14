@@ -6,7 +6,7 @@ import NeedsAttentionBanner from './needs-attention-banner'
 import TodaysMealsCard from './todays-meals-card'
 import ActivityFeed from './activity-feed'
 import { redirect } from 'next/navigation'
-import { Briefcase, Settings, AlertTriangle, BarChart3, FileText, Users, Utensils } from 'lucide-react'
+import { Briefcase, ClipboardCheck, AlertTriangle, BarChart3, FileText, Users, Utensils } from 'lucide-react'
 
 export default async function ParentDashboard() {
   const supabase = await createClient()
@@ -234,8 +234,8 @@ export default async function ParentDashboard() {
         type: 'gig_review',
         kidId,
         kidName: data.name,
-        message: `${data.name} has ${data.count} gig${data.count > 1 ? 's' : ''} awaiting inspection`,
-        link: '/gigs/inspect',
+        message: `${data.name} has ${data.count} gig${data.count > 1 ? 's' : ''} awaiting review`,
+        link: '/dashboard/review',
         count: data.count,
       })
     })
@@ -320,9 +320,9 @@ export default async function ParentDashboard() {
             <Briefcase className="w-4 h-4" />
             Browse Gigs
           </a>
-          <a href="/gigs/inspect" className="action-btn action-btn-green">
-            <Settings className="w-4 h-4" />
-            Inspect Gigs
+          <a href="/dashboard/review" className="action-btn action-btn-green">
+            <ClipboardCheck className="w-4 h-4" />
+            Review Submissions
           </a>
           <a href="/meals" className="action-btn action-btn-orange">
             <Utensils className="w-4 h-4" />

@@ -61,7 +61,74 @@ export async function GET() {
       )
     }
 
-    // Enrich with entity details
+    // Get gig IDs that have pending photo submissions
+    const gigIdsWithPhotos = new Set(
+      (photos || [])
+        .filter(p => p.entity_type === 'gig')
+        .map(p => p.entity_id)
+    )
+
+    // Get claimed gigs pending inspection (no photo submitted yet)
+    // These are gigs that kids claimed but haven't submitted proof for
+    const { data: pendingDirectGigs, error: gigsError } = await supabase
+      .from('claimed_gigs')
+      .select(`
+        id,
+        kid_id,
+        gig_id,
+        claimed_at,
+        inspection_status,
+        inspection_notes,
+        kids (
+          id,
+          name
+        ),
+        gigs (
+          id,
+          title,
+          description,
+          stars,
+          checklist
+        )
+      `)
+      .is('completed_at', null)
+      .or('inspection_status.is.null,inspection_status.eq.rejected')
+      .order('claimed_at', { ascending: false })
+
+    if (gigsError) {
+      console.error('Error fetching pending gigs:', gigsError)
+    }
+
+    // Filter out gigs that already have pending photo submissions
+    const directInspectionGigs = (pendingDirectGigs || [])
+      .filter(g => !gigIdsWithPhotos.has(g.gig_id))
+      .map(g => ({
+        id: `direct-${g.id}`,
+        claimedGigId: g.id,
+        entity_type: 'gig' as const,
+        entity_id: g.gig_id,
+        storage_path: null,
+        notes: null,
+        status: g.inspection_status === 'rejected' ? 'rejected' : 'pending_inspection',
+        uploaded_at: g.claimed_at,
+        ai_passed: null,
+        ai_feedback: null,
+        ai_confidence: null,
+        escalated_to_parent: false,
+        submission_attempt: 1,
+        kids: g.kids,
+        photoUrl: null,
+        isDirectInspection: true,
+        rejectionNotes: g.inspection_notes,
+        entityDetails: {
+          title: (g.gigs as any)?.title,
+          stars: (g.gigs as any)?.stars,
+          description: (g.gigs as any)?.description,
+          checklist: (g.gigs as any)?.checklist,
+        },
+      }))
+
+    // Enrich photo submissions with entity details
     const enrichedPhotos = await Promise.all(
       (photos || []).map(async (photo) => {
         let entityDetails = null
@@ -69,7 +136,7 @@ export async function GET() {
         if (photo.entity_type === 'gig') {
           const { data: gig } = await supabase
             .from('gigs')
-            .select('title, stars')
+            .select('title, stars, description, checklist')
             .eq('id', photo.entity_id)
             .single()
           entityDetails = gig
@@ -91,11 +158,15 @@ export async function GET() {
           ...photo,
           photoUrl: urlData.publicUrl,
           entityDetails,
+          isDirectInspection: false,
         }
       })
     )
 
-    return NextResponse.json({ submissions: enrichedPhotos })
+    // Combine both types of submissions
+    const allSubmissions = [...enrichedPhotos, ...directInspectionGigs]
+
+    return NextResponse.json({ submissions: allSubmissions })
   } catch (error) {
     console.error('Pending photos API error:', error)
     return NextResponse.json(

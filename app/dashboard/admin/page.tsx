@@ -9,10 +9,9 @@ import {
   Tv,
   AlertTriangle,
   FileText,
-  Camera,
+  ClipboardCheck,
   Star,
   Activity,
-  Settings,
   ChevronRight,
 } from 'lucide-react'
 
@@ -73,20 +72,12 @@ export default async function AdminHubPage() {
       color: 'bg-purple-100 text-purple-600',
     },
     {
-      title: 'Inspect Gigs',
-      description: 'Review completed gigs from kids.',
-      href: '/gigs/inspect',
-      icon: <Settings className="w-6 h-6" />,
-      color: 'bg-green-100 text-green-600',
-      badge: pendingGigs,
-    },
-    {
-      title: 'Review Photos',
-      description: 'Review submitted completion photos.',
+      title: 'Review Submissions',
+      description: 'Review gig completions and photo submissions.',
       href: '/dashboard/review',
-      icon: <Camera className="w-6 h-6" />,
-      color: 'bg-teal-100 text-teal-600',
-      badge: pendingPhotos,
+      icon: <ClipboardCheck className="w-6 h-6" />,
+      color: 'bg-green-100 text-green-600',
+      badge: pendingGigs + pendingPhotos,
     },
     {
       title: 'Chore Assignments',
