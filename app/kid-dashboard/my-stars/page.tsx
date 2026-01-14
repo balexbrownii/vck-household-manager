@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Star,
-  ArrowLeft,
+  ChevronLeft,
   Trophy,
   Calendar,
   TrendingUp,
@@ -90,7 +90,7 @@ export default function MyStarsPage() {
             onClick={() => router.push('/kid-dashboard')}
             className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-white" />
+            <ChevronLeft className="w-5 h-5 text-white" />
           </button>
           <h1 className="text-xl font-bold text-white">My Stars</h1>
         </div>
@@ -107,7 +107,7 @@ export default function MyStarsPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
           <div className="bg-white rounded-2xl p-4 shadow-lg text-center">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
               <TrendingUp className="w-6 h-6 text-green-600" />

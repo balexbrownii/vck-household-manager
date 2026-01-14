@@ -98,7 +98,7 @@ export default function ScreenTimeTimer({ kid, session }: ScreenTimeTimerProps) 
       </div>
 
       {/* Details */}
-      <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 border-t border-gray-200">
         <div>
           <div className="text-xs text-gray-600">Base Time</div>
           <div className="font-bold text-gray-900">

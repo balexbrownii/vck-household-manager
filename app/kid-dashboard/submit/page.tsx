@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Camera,
-  ArrowLeft,
+  ChevronLeft,
   CheckCircle2,
   Upload,
   X,
@@ -327,7 +327,7 @@ export default function SubmitWorkPage() {
             onClick={() => router.push('/kid-dashboard')}
             className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-white" />
+            <ChevronLeft className="w-5 h-5 text-white" />
           </button>
           <h1 className="text-xl font-bold text-white">Submit Work</h1>
         </div>

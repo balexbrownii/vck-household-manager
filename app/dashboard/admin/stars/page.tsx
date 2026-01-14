@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import PageHeader from '@/components/ui/page-header'
 import {
   Star,
   Plus,
   Minus,
-  ChevronLeft,
   Loader2,
   Check,
   History,
@@ -28,7 +27,6 @@ interface StarHistoryEntry {
 }
 
 export default function StarAdjustmentPage() {
-  const router = useRouter()
   const [kids, setKids] = useState<Kid[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedKid, setSelectedKid] = useState<Kid | null>(null)
@@ -167,21 +165,13 @@ export default function StarAdjustmentPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <button
-        onClick={() => router.push('/dashboard/admin')}
-        className="flex items-center gap-1 text-gray-600 hover:text-gray-900 text-sm mb-4"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        Back to Admin
-      </button>
-
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Star className="w-7 h-7 text-yellow-500 fill-yellow-500" />
-          Star Adjustments
-        </h1>
-        <p className="text-gray-600 mt-1">Manually add or deduct stars from kids</p>
-      </div>
+      <PageHeader
+        title="Star Adjustments"
+        subtitle="Manually add or deduct stars from kids"
+        backHref="/dashboard/admin"
+        backLabel="Back to Admin"
+        icon={<Star className="w-7 h-7 text-yellow-500 fill-yellow-500" />}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left - Kid Selection & Adjustment Form */}

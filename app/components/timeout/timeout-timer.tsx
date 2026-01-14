@@ -156,7 +156,7 @@ export default function TimeoutTimer({ timeout, onReset, onComplete }: TimeoutTi
       </div>
 
       {/* Details grid */}
-      <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200 mb-6">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 border-t border-gray-200 mb-6">
         <div>
           <div className="text-xs text-gray-600">Base Time</div>
           <div className="font-bold text-gray-900">

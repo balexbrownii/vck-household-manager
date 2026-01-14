@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import PageHeader from '@/components/ui/page-header'
 import {
-  ArrowLeft,
+  Camera,
   Loader2,
   CheckCircle,
   XCircle,
@@ -121,21 +122,13 @@ export default function ReviewPage() {
   return (
     <main className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Review Submissions</h1>
-            <p className="text-gray-600">
-              {submissions.length} pending {submissions.length === 1 ? 'submission' : 'submissions'}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title="Review Submissions"
+          subtitle={`${submissions.length} pending ${submissions.length === 1 ? 'submission' : 'submissions'}`}
+          backHref="/dashboard"
+          backLabel="Back to Dashboard"
+          icon={<Camera className="w-7 h-7 text-purple-600" />}
+        />
 
         {error && (
           <div className="mb-4 p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">

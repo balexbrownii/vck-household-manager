@@ -1,10 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import PageHeader from '@/components/ui/page-header'
 import {
-  ArrowLeft,
   Sparkles,
   Briefcase,
   Home,
@@ -51,7 +50,6 @@ interface ExpectationRule {
 }
 
 export default function RulesPage() {
-  const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabType>('gigs')
   const [gigs, setGigs] = useState<GigRule[]>([])
   const [chores, setChores] = useState<ChoreRule[]>([])
@@ -259,23 +257,13 @@ export default function RulesPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.back()}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-purple-600" />
-                AI Rules Configuration
-              </h1>
-              <p className="text-sm text-gray-600">
-                Configure what AI looks for when reviewing submissions
-              </p>
-            </div>
-          </div>
+          <PageHeader
+            title="AI Rules Configuration"
+            subtitle="Configure what AI looks for when reviewing submissions"
+            backHref="/dashboard/admin"
+            backLabel="Back to Admin"
+            icon={<Settings className="w-5 h-5 text-purple-600" />}
+          />
         </div>
       </div>
 

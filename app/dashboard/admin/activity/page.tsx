@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import PageHeader from '@/components/ui/page-header'
 import {
   Activity,
-  ChevronLeft,
   Loader2,
   User,
   Users,
@@ -37,7 +36,6 @@ interface Kid {
 }
 
 export default function ActivityLogPage() {
-  const router = useRouter()
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [kids, setKids] = useState<Kid[]>([])
   const [loading, setLoading] = useState(true)
@@ -171,21 +169,13 @@ export default function ActivityLogPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <button
-        onClick={() => router.push('/dashboard/admin')}
-        className="flex items-center gap-1 text-gray-600 hover:text-gray-900 text-sm mb-4"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        Back to Admin
-      </button>
-
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Activity className="w-7 h-7 text-gray-600" />
-          Activity Log
-        </h1>
-        <p className="text-gray-600 mt-1">View all family activity history</p>
-      </div>
+      <PageHeader
+        title="Activity Log"
+        subtitle="View all family activity history"
+        backHref="/dashboard/admin"
+        backLabel="Back to Admin"
+        icon={<Activity className="w-7 h-7 text-gray-600" />}
+      />
 
       {/* Filters */}
       <div className="bg-white rounded-xl border-2 border-gray-100 p-4 mb-6">

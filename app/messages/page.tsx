@@ -64,7 +64,7 @@ export default async function MessagesPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div className="bg-white rounded-xl border border-gray-200 p-4">
               <div className="text-3xl font-bold text-gray-900">{allMessages.length}</div>
               <div className="text-sm text-gray-500">Total Messages</div>

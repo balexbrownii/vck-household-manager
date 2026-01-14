@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  ArrowLeft,
+  ChevronLeft,
   Camera,
   Sparkles,
   AlertCircle,
@@ -276,7 +276,7 @@ export default function RevisionsPage() {
               }}
               className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-white" />
+              <ChevronLeft className="w-5 h-5 text-white" />
             </button>
             <h1 className="text-xl font-bold text-white">Fix & Resubmit</h1>
           </div>
@@ -451,7 +451,7 @@ export default function RevisionsPage() {
             onClick={() => router.push('/kid-dashboard')}
             className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-white" />
+            <ChevronLeft className="w-5 h-5 text-white" />
           </button>
           <div>
             <h1 className="text-xl font-bold text-white">Needs Revision</h1>

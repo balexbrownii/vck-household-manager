@@ -133,7 +133,7 @@ export default function QuickAddMeal({ onMealAdded }: QuickAddMealProps) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Meal Type
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {mealTypes.map((type) => (
                   <button
                     key={type.value}

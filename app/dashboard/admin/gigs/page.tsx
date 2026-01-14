@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import PageHeader from '@/components/ui/page-header'
 import {
   Plus,
   Pencil,
@@ -13,6 +13,7 @@ import {
   X,
   Loader2,
   AlertTriangle,
+  Briefcase,
 } from 'lucide-react'
 
 interface Gig {
@@ -56,7 +57,6 @@ const emptyGig: GigFormData = {
 }
 
 export default function GigManagementPage() {
-  const router = useRouter()
   const [gigs, setGigs] = useState<Gig[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -428,26 +428,22 @@ export default function GigManagementPage() {
   // List view
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <PageHeader
+        title="Gig Management"
+        subtitle={`${gigs.length} gigs total`}
+        backHref="/dashboard/admin"
+        backLabel="Back to Admin"
+        icon={<Briefcase className="w-7 h-7 text-purple-600" />}
+        actions={
           <button
-            onClick={() => router.push('/dashboard/admin')}
-            className="flex items-center gap-1 text-gray-600 hover:text-gray-900 text-sm mb-2"
+            onClick={handleCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700"
           >
-            <ChevronLeft className="w-4 h-4" />
-            Back to Admin
+            <Plus className="w-5 h-5" />
+            New Gig
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Gig Management</h1>
-          <p className="text-gray-600">{gigs.length} gigs total</p>
-        </div>
-        <button
-          onClick={handleCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700"
-        >
-          <Plus className="w-5 h-5" />
-          New Gig
-        </button>
-      </div>
+        }
+      />
 
       <div className="space-y-3">
         {gigs.map((gig) => (

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import {
-  ArrowLeft,
+  ChevronLeft,
   Star,
   Clock,
   CheckCircle2,
@@ -123,7 +123,7 @@ export default function GigDetailPage() {
             onClick={() => router.push('/kid-dashboard/gigs')}
             className="flex items-center gap-2 text-white mb-6"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ChevronLeft className="w-5 h-5" />
             <span>Back to Gigs</span>
           </button>
           <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
@@ -146,7 +146,7 @@ export default function GigDetailPage() {
             onClick={() => router.push('/kid-dashboard/gigs')}
             className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-white" />
+            <ChevronLeft className="w-5 h-5 text-white" />
           </button>
           <h1 className="text-xl font-bold text-white">Gig Details</h1>
         </div>

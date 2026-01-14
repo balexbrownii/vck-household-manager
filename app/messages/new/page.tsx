@@ -2,8 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import TopNav from '@/components/nav/top-nav'
 import NewMessageForm from './new-message-form'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
+import { BackLink } from '@/components/ui/page-header'
 
 export default async function NewMessagePage() {
   const supabase = await createClient()
@@ -30,13 +29,7 @@ export default async function NewMessagePage() {
         <div className="parent-content max-w-2xl">
           {/* Header */}
           <div className="mb-8">
-            <Link
-              href="/messages"
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Messages
-            </Link>
+            <BackLink href="/messages" label="Back to Messages" />
             <h1 className="dashboard-title">New Message</h1>
             <p className="dashboard-subtitle">
               Send a message or announcement to your kids

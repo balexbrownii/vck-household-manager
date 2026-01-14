@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  ArrowLeft,
+  ChevronLeft,
   CheckCircle2,
   Circle,
   Clock,
@@ -99,7 +99,7 @@ export default function ChoresPage() {
             onClick={() => router.push('/kid-dashboard')}
             className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-white" />
+            <ChevronLeft className="w-5 h-5 text-white" />
           </button>
           <h1 className="text-xl font-bold text-white">My Chores</h1>
         </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Briefcase,
-  ArrowLeft,
+  ChevronLeft,
   Star,
   Clock,
   ChevronRight,
@@ -95,7 +95,7 @@ export default function GigsPage() {
             onClick={() => router.push('/kid-dashboard')}
             className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-white" />
+            <ChevronLeft className="w-5 h-5 text-white" />
           </button>
           <h1 className="text-xl font-bold text-white">Available Gigs</h1>
         </div>
