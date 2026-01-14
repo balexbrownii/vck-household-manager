@@ -37,6 +37,8 @@ export async function GET(request: NextRequest) {
     const unreadOnly = searchParams.get('unreadOnly') === 'true'
     const forParent = searchParams.get('forParent') === 'true'
     const limit = parseInt(searchParams.get('limit') || '20')
+    const offset = parseInt(searchParams.get('offset') || '0')
+    const actionFilter = searchParams.get('action') // Filter by action type (e.g., 'gig', 'expectation')
 
     // Check authentication
     const { data: { user } } = await supabase.auth.getUser()
@@ -49,16 +51,21 @@ export async function GET(request: NextRequest) {
     const isParent = !!user
     const isKid = !user && !!sessionKidId
 
-    // Build query
+    // Build query - include kids relationship for name lookup
     let query = supabase
       .from('activity_feed')
-      .select('*')
+      .select('*, kids(name)')
       .order('created_at', { ascending: false })
-      .limit(limit)
+      .range(offset, offset + limit - 1)
 
     // Filter by kid if specified
     if (kidId) {
       query = query.eq('kid_id', kidId)
+    }
+
+    // Filter by action type (partial match)
+    if (actionFilter && actionFilter !== 'all') {
+      query = query.ilike('action', `%${actionFilter}%`)
     }
 
     // For kids, only show their own activity
@@ -81,7 +88,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch activity' }, { status: 500 })
     }
 
-    return NextResponse.json({ activity: data })
+    // Return both 'activity' (for backward compat) and 'activities' (for admin view)
+    return NextResponse.json({ activity: data, activities: data })
   } catch (error) {
     console.error('Activity GET error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

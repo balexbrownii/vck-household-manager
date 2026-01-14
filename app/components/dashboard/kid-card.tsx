@@ -6,8 +6,9 @@ import ScreenTimeStatus from './screen-time-status'
 import StarTracker from './star-tracker'
 import QuickAddChore from './quick-add-chore'
 import QuickAddExpectation from './quick-add-expectation'
+import QuickAddGig from './quick-add-gig'
 import Link from 'next/link'
-import { ChevronRight, Star } from 'lucide-react'
+import { ChevronRight, Star, Briefcase } from 'lucide-react'
 
 interface PendingTimeout {
   id: string
@@ -80,22 +81,30 @@ export default function KidCard({
         />
       </div>
 
-      {/* Quick link to gigs */}
-      <Link
-        href={`/kid/${kid.id}/gigs`}
-        className="flex items-center justify-between p-3 -mx-1 rounded-xl hover:bg-gray-50 transition-colors group"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-            <Star className="w-5 h-5 text-purple-600" />
-          </div>
-          <div>
-            <div className="font-semibold text-gray-900">View Gigs</div>
-            <div className="text-sm text-gray-500">{kid.total_stars} stars earned</div>
-          </div>
+      {/* Gigs Section */}
+      <div className="border-t pt-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            Gigs
+          </h3>
+          <QuickAddGig kidId={kid.id} kidName={kid.name} />
         </div>
-        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
-      </Link>
+        <Link
+          href={`/kid/${kid.id}/gigs`}
+          className="flex items-center justify-between p-3 -mx-1 rounded-xl hover:bg-gray-50 transition-colors group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+              <Briefcase className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">View Gigs</div>
+              <div className="text-sm text-gray-500">{kid.total_stars} stars earned</div>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+        </Link>
+      </div>
     </div>
   )
 }
