@@ -26,6 +26,31 @@ export interface DailyExpectation {
   completed_at: string | null
   created_at: string
   updated_at: string
+  // Audit fields for each expectation type
+  exercise_completed_by: string | null
+  exercise_completed_at: string | null
+  exercise_completed_by_kid: boolean
+  reading_completed_by: string | null
+  reading_completed_at: string | null
+  reading_completed_by_kid: boolean
+  tidy_up_completed_by: string | null
+  tidy_up_completed_at: string | null
+  tidy_up_completed_by_kid: boolean
+  daily_chore_completed_by: string | null
+  daily_chore_completed_at: string | null
+  daily_chore_completed_by_kid: boolean
+}
+
+export interface ExpectationAuditLog {
+  id: string
+  daily_expectation_id: string
+  kid_id: string
+  expectation_type: 'exercise' | 'reading' | 'tidy_up' | 'daily_chore'
+  action: 'completed' | 'uncompleted'
+  completed_by_parent_id: string | null
+  completed_by_kid: boolean
+  note: string | null
+  created_at: string
 }
 
 export interface ChoreRotationState {

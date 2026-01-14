@@ -10,6 +10,8 @@ interface ChecklistToggleProps {
   label: string
   description: string
   isComplete: boolean
+  completedByKid?: boolean
+  completedAt?: string | null
   onUpdate?: () => void
 }
 
@@ -20,6 +22,8 @@ export default function ChecklistToggle({
   label,
   description,
   isComplete,
+  completedByKid,
+  completedAt,
   onUpdate,
 }: ChecklistToggleProps) {
   const [loading, setLoading] = useState(false)
@@ -38,9 +42,8 @@ export default function ChecklistToggle({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           kidId,
-          date,
-          expectation,
-          complete: true,
+          type: expectation, // expectation prop contains the type value (exercise, reading, etc.)
+          completed: true,
           note: note.trim() || undefined,
         }),
       })
@@ -75,9 +78,8 @@ export default function ChecklistToggle({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           kidId,
-          date,
-          expectation,
-          complete: false,
+          type: expectation, // expectation prop contains the type value
+          completed: false,
         }),
       })
 
@@ -95,8 +97,21 @@ export default function ChecklistToggle({
     }
   }
 
+  // Format completion info
+  const getCompletionInfo = () => {
+    if (!completedAt) return null
+    const time = new Date(completedAt).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+    const source = completedByKid ? 'by kid' : 'by parent'
+    return `${time} ${source}`
+  }
+
   // If already complete, show completed state with option to undo
   if (complete) {
+    const completionInfo = getCompletionInfo()
     return (
       <div className="w-full flex items-start gap-3 p-3 rounded-lg border-2 border-green-200 bg-green-50">
         <div className="flex-shrink-0 mt-1">
@@ -105,6 +120,11 @@ export default function ChecklistToggle({
         <div className="flex-1 text-left">
           <div className="font-medium text-gray-700">{label}</div>
           <div className="text-sm text-gray-500">{description}</div>
+          {completionInfo && (
+            <div className="text-xs text-green-600 mt-1">
+              ✓ Completed {completionInfo}
+            </div>
+          )}
         </div>
         <button
           onClick={handleUncomplete}

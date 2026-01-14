@@ -129,6 +129,19 @@ export default async function ParentDashboard() {
     daily_chore_complete: false,
     all_complete: false,
     completed_at: null,
+    // Audit fields
+    exercise_completed_by: null,
+    exercise_completed_at: null,
+    exercise_completed_by_kid: false,
+    reading_completed_by: null,
+    reading_completed_at: null,
+    reading_completed_by_kid: false,
+    tidy_up_completed_by: null,
+    tidy_up_completed_at: null,
+    tidy_up_completed_by_kid: false,
+    daily_chore_completed_by: null,
+    daily_chore_completed_at: null,
+    daily_chore_completed_by_kid: false,
   }
 
   const kidExpectations = kids.map((kid) => {

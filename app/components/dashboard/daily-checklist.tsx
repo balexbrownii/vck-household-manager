@@ -40,23 +40,35 @@ export default function DailyChecklist({
   const expectationItems = [
     {
       key: 'exercise_complete',
+      type: 'exercise',
       label: 'Exercise',
       description: '20+ minutes physical activity',
+      completedByKid: expectations.exercise_completed_by_kid,
+      completedAt: expectations.exercise_completed_at,
     },
     {
       key: 'reading_complete',
+      type: 'reading',
       label: 'Read/Homework',
       description: '15+ minutes reading or homework',
+      completedByKid: expectations.reading_completed_by_kid,
+      completedAt: expectations.reading_completed_at,
     },
     {
       key: 'tidy_up_complete',
+      type: 'tidy_up',
       label: 'Tidy Up',
       description: 'Personal cleanup (room, house, car, yard)',
+      completedByKid: expectations.tidy_up_completed_by_kid,
+      completedAt: expectations.tidy_up_completed_at,
     },
     {
       key: 'daily_chore_complete',
+      type: 'daily_chore',
       label: `Daily Chore: ${choreAssignment || 'TBD'}`,
       description: choreDescription,
+      completedByKid: expectations.daily_chore_completed_by_kid,
+      completedAt: expectations.daily_chore_completed_at,
     },
   ]
 
@@ -79,12 +91,14 @@ export default function DailyChecklist({
           key={item.key}
           kidId={kidId}
           date={date}
-          expectation={item.key}
+          expectation={item.type}
           label={item.label}
           description={item.description}
           isComplete={
             expectations[item.key as keyof DailyExpectation] === true
           }
+          completedByKid={item.completedByKid}
+          completedAt={item.completedAt}
         />
       ))}
     </div>

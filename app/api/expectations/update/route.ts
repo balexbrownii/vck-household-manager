@@ -49,8 +49,17 @@ export async function POST(request: NextRequest) {
       daily_chore: 'daily_chore_complete',
     }
 
+    // Map type to audit column prefix
+    const typeToAuditPrefix: Record<string, string> = {
+      exercise: 'exercise',
+      reading: 'reading',
+      tidy_up: 'tidy_up',
+      daily_chore: 'daily_chore',
+    }
+
     const column = typeToColumn[type]
-    if (!column) {
+    const auditPrefix = typeToAuditPrefix[type]
+    if (!column || !auditPrefix) {
       return NextResponse.json(
         { error: 'Invalid type. Must be: exercise, reading, tidy_up, or daily_chore' },
         { status: 400 }
@@ -66,13 +75,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Determine if this is a parent or kid marking complete
+    const isParent = !!user
+    const isKid = !user && sessionKidId === kidId
+
     // Get today's date
     const today = new Date().toISOString().split('T')[0]
 
-    // Build update object
+    // Build update object with audit info
+    const isCompleting = completed !== false
     const updateData: Record<string, unknown> = {
-      [column]: completed !== false,
+      [column]: isCompleting,
       updated_at: new Date().toISOString(),
+    }
+
+    // Add audit columns when completing
+    if (isCompleting) {
+      updateData[`${auditPrefix}_completed_at`] = new Date().toISOString()
+      updateData[`${auditPrefix}_completed_by_kid`] = isKid
+      if (isParent) {
+        updateData[`${auditPrefix}_completed_by`] = user.id
+      }
+    } else {
+      // Clear audit columns when uncompleting
+      updateData[`${auditPrefix}_completed_at`] = null
+      updateData[`${auditPrefix}_completed_by`] = null
+      updateData[`${auditPrefix}_completed_by_kid`] = false
     }
 
     // If expectationId provided, update by ID; otherwise upsert by kid_id + date
@@ -105,6 +133,17 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         )
       }
+
+      // Log to audit table
+      await supabase.from('expectation_audit_log').insert({
+        daily_expectation_id: expectationId,
+        kid_id: kidId,
+        expectation_type: type,
+        action: isCompleting ? 'completed' : 'uncompleted',
+        completed_by_parent_id: isParent ? user.id : null,
+        completed_by_kid: isKid,
+        note: note?.trim() || null,
+      })
 
       // If there's a note, log a completion photo record for tracking
       if (note && note.trim()) {
@@ -141,6 +180,19 @@ export async function POST(request: NextRequest) {
           { error: 'Failed to update expectation' },
           { status: 500 }
         )
+      }
+
+      // Log to audit table
+      if (data) {
+        await supabase.from('expectation_audit_log').insert({
+          daily_expectation_id: data.id,
+          kid_id: kidId,
+          expectation_type: type,
+          action: isCompleting ? 'completed' : 'uncompleted',
+          completed_by_parent_id: isParent ? user.id : null,
+          completed_by_kid: isKid,
+          note: note?.trim() || null,
+        })
       }
 
       // If there's a note, log it
