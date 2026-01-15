@@ -116,6 +116,26 @@ body {
   color: var(--color-text-primary);
 }
 
+/* Global input text color - ensures visibility regardless of browser theme */
+input,
+textarea,
+select {
+  color: var(--color-text-primary);
+  background-color: inherit;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  color: var(--color-text-primary);
+}
+
+/* Caret visibility */
+input,
+textarea {
+  caret-color: var(--color-blue);
+}
+
 /* ============================================
    Component Styles
    ============================================ */
@@ -199,17 +219,30 @@ body {
   width: 100%;
   padding: var(--space-3) var(--space-4);
   background: var(--color-bg-tertiary);
-  border: none;
+  border: 2px solid transparent;
   border-radius: var(--radius-md);
   font-size: 1rem;
   color: var(--color-text-primary);
   transition: all var(--transition-fast);
+  /* Ensure text visibility in forced colors mode */
+  forced-color-adjust: none;
 }
 
 .input:focus {
   outline: none;
   background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  border: 2px solid var(--color-blue);
   box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.2);
+}
+
+/* Autofill styling to prevent browser override */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-text-primary);
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-bg-tertiary) inset;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .input::placeholder {
