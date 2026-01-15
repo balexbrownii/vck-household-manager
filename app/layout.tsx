@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -117,6 +118,24 @@ export default function RootLayout({
       </head>
       <body className="bg-white antialiased touch-manipulation">
         {children}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            style: {
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '0.75rem',
+              padding: '1rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            },
+            classNames: {
+              success: 'border-green-200 bg-green-50',
+              error: 'border-red-200 bg-red-50',
+              warning: 'border-yellow-200 bg-yellow-50',
+              info: 'border-blue-200 bg-blue-50',
+            },
+          }}
+        />
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, X, Check, Briefcase, Star, Clock, Loader2 } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface QuickAddGigProps {
   kidId: string
@@ -60,9 +61,11 @@ export default function QuickAddGig({ kidId, kidName, onGigAdded }: QuickAddGigP
           setShowCustom(false)
           onGigAdded?.()
         }, 1500)
+      } else {
+        toast.error('Failed to assign gig')
       }
-    } catch (error) {
-      console.error('Failed to add gig:', error)
+    } catch {
+      toast.error('Failed to assign gig')
     } finally {
       setSaving(false)
     }

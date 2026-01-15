@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, CheckCircle, X, MessageSquare, AlertCircle } from 'lucide-react'
+import { Bell, CheckCircle, X, MessageSquare } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface Message {
   id: string
@@ -32,8 +33,8 @@ export default function KidNotifications() {
         const data = await res.json()
         setMessages(data.messages || [])
       }
-    } catch (error) {
-      console.error('Failed to fetch messages:', error)
+    } catch {
+      // Silent fail on background fetch - don't spam toasts
     } finally {
       setLoading(false)
     }
@@ -47,8 +48,8 @@ export default function KidNotifications() {
         body: JSON.stringify({ messageId, markRead: true })
       })
       setDismissedIds(prev => new Set([...Array.from(prev), messageId]))
-    } catch (error) {
-      console.error('Failed to mark as read:', error)
+    } catch {
+      toast.error('Failed to dismiss notification')
     }
   }
 

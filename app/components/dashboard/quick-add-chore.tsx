@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, X, Check, ListTodo } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface QuickAddChoreProps {
   kidId: string
@@ -45,9 +46,11 @@ export default function QuickAddChore({ kidId, kidName, onChoreAdded }: QuickAdd
           setChecklist([])
           onChoreAdded?.()
         }, 1500)
+      } else {
+        toast.error('Failed to add task')
       }
-    } catch (error) {
-      console.error('Failed to add chore:', error)
+    } catch {
+      toast.error('Failed to add task')
     } finally {
       setSaving(false)
     }

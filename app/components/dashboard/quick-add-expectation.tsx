@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, X, Check, Star, Sparkles, Music, BookOpen, Dumbbell, Clock } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface QuickAddExpectationProps {
   kidId: string
@@ -63,9 +64,11 @@ export default function QuickAddExpectation({ kidId, kidName, onExpectationAdded
           setShowCustom(false)
           onExpectationAdded?.()
         }, 1500)
+      } else {
+        toast.error('Failed to add task')
       }
-    } catch (error) {
-      console.error('Failed to add expectation:', error)
+    } catch {
+      toast.error('Failed to add task')
     } finally {
       setSaving(false)
     }
