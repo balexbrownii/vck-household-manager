@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import TopNav from '@/components/nav/top-nav'
+import { toast } from '@/lib/toast'
 import Link from 'next/link'
 import { ChevronLeft, Key, Check, Loader2, Eye, EyeOff } from 'lucide-react'
 
@@ -41,8 +42,8 @@ export default function ManageKidsPage() {
           hasPin: !!k.pin_hash,
         })))
       }
-    } catch (err) {
-      console.error('Error loading kids:', err)
+    } catch {
+      toast.error('Failed to load kids')
     } finally {
       setLoading(false)
     }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import PageHeader from '@/components/ui/page-header'
+import { toast } from '@/lib/toast'
 import {
   Star,
   Plus,
@@ -50,8 +51,8 @@ export default function StarAdjustmentPage() {
         const data = await res.json()
         setKids(data.kids || [])
       }
-    } catch (err) {
-      console.error('Failed to load kids:', err)
+    } catch {
+      toast.error('Failed to load kids')
     } finally {
       setLoading(false)
     }
@@ -65,8 +66,8 @@ export default function StarAdjustmentPage() {
         const data = await res.json()
         setHistory(data.history || [])
       }
-    } catch (err) {
-      console.error('Failed to load history:', err)
+    } catch {
+      toast.error('Failed to load history')
     } finally {
       setLoadingHistory(false)
     }
@@ -130,8 +131,8 @@ export default function StarAdjustmentPage() {
         const data = await res.json()
         setError(data.error || 'Failed to adjust stars')
       }
-    } catch (err) {
-      setError('Failed to adjust stars')
+    } catch {
+      toast.error('Failed to adjust stars')
     } finally {
       setSaving(false)
     }

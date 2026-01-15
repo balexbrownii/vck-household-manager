@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Star, Sparkles, Music, BookOpen, Dumbbell, Clock, ListTodo, CheckCircle2, Circle, Trash2 } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 const iconMap: Record<string, typeof Star> = {
   star: Star,
@@ -57,8 +58,8 @@ export default function AdhocItemToggle({
         setComplete(!complete)
         router.refresh()
       }
-    } catch (error) {
-      console.error('Failed to toggle:', error)
+    } catch {
+      toast.error('Failed to update item')
     } finally {
       setLoading(false)
     }

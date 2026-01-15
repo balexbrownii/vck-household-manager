@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, Play, CheckCircle2, Clock, ChevronDown, ChevronUp, X, Hourglass, Trash2 } from 'lucide-react'
+import { AlertTriangle, Play, Clock, ChevronDown, ChevronUp, X, Hourglass, Trash2 } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface TimeoutToggleProps {
   timeoutId: string
@@ -84,10 +85,10 @@ export default function TimeoutToggle({
         setTimeRemaining(timeoutMinutes * 60)
         router.refresh()
       } else {
-        console.error('Failed to start timeout')
+        toast.error('Failed to start timeout')
       }
-    } catch (error) {
-      console.error('Error starting timeout:', error)
+    } catch {
+      toast.error('Failed to start timeout')
     } finally {
       setLoading(false)
     }
@@ -107,10 +108,10 @@ export default function TimeoutToggle({
         setIsServing(false)
         router.refresh()
       } else {
-        console.error('Failed to mark timeout as served')
+        toast.error('Failed to mark timeout as served')
       }
-    } catch (error) {
-      console.error('Error marking timeout served:', error)
+    } catch {
+      toast.error('Failed to mark timeout as served')
     } finally {
       setLoading(false)
     }
@@ -129,10 +130,10 @@ export default function TimeoutToggle({
         if (onDismiss) onDismiss()
         router.refresh()
       } else {
-        console.error('Failed to dismiss timeout')
+        toast.error('Failed to dismiss timeout')
       }
-    } catch (error) {
-      console.error('Error dismissing timeout:', error)
+    } catch {
+      toast.error('Failed to dismiss timeout')
     } finally {
       setDismissing(false)
     }
@@ -151,10 +152,10 @@ export default function TimeoutToggle({
         if (onDismiss) onDismiss()
         router.refresh()
       } else {
-        console.error('Failed to approve timeout')
+        toast.error('Failed to approve timeout')
       }
-    } catch (error) {
-      console.error('Error approving timeout:', error)
+    } catch {
+      toast.error('Failed to approve timeout')
     } finally {
       setLoading(false)
     }

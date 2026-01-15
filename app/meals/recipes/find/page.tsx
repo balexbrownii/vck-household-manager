@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import TopNav from '@/components/nav/top-nav'
+import { toast } from '@/lib/toast'
 import Link from 'next/link'
 import { ChevronLeft, Send, Plus, Check, Clock, Users, Loader2, Sparkles } from 'lucide-react'
 
@@ -93,8 +94,8 @@ export default function FindRecipesPage() {
           recipes: data.recipes || [],
         },
       ])
-    } catch (error) {
-      console.error('Error:', error)
+    } catch {
+      toast.error('Failed to find recipes')
       setMessages((prev) => [
         ...prev,
         {
@@ -123,9 +124,8 @@ export default function FindRecipesPage() {
       }
 
       setAddedRecipes((prev) => new Set(Array.from(prev).concat(recipe.title)))
-    } catch (error) {
-      console.error('Error adding recipe:', error)
-      alert('Failed to add recipe. Please try again.')
+    } catch {
+      toast.error('Failed to add recipe')
     } finally {
       setAddingRecipe(null)
     }

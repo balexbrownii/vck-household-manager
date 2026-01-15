@@ -13,6 +13,7 @@ import {
   CheckCircle,
   Reply
 } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface Message {
   id: string
@@ -66,8 +67,8 @@ export default function MessageList({ initialMessages }: MessageListProps) {
           m.id === messageId ? { ...m, read_at: new Date().toISOString() } : m
         ))
       }
-    } catch (error) {
-      console.error('Failed to mark as read:', error)
+    } catch {
+      // Silent - marking as read is not critical
     }
   }
 
@@ -90,9 +91,11 @@ export default function MessageList({ initialMessages }: MessageListProps) {
         ))
         setResponding(null)
         setCustomResponse('')
+      } else {
+        toast.error('Failed to send response')
       }
-    } catch (error) {
-      console.error('Failed to respond:', error)
+    } catch {
+      toast.error('Failed to send response')
     }
   }
 

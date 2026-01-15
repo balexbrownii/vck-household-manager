@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lock, Unlock, Settings } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface ScreenTimeStatusProps {
   allExpectationsComplete: boolean
@@ -31,9 +32,11 @@ export default function ScreenTimeStatus({
       if (res.ok) {
         router.refresh()
         setShowOverride(false)
+      } else {
+        toast.error('Failed to update screen time')
       }
-    } catch (error) {
-      console.error('Screen time override failed:', error)
+    } catch {
+      toast.error('Failed to update screen time')
     } finally {
       setOverriding(false)
     }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import PageHeader from '@/components/ui/page-header'
+import { toast } from '@/lib/toast'
 import {
   Activity,
   Loader2,
@@ -62,8 +63,8 @@ export default function ActivityLogPage() {
         const data = await res.json()
         setKids(data.kids || [])
       }
-    } catch (err) {
-      console.error('Failed to load kids:', err)
+    } catch {
+      toast.error('Failed to load kids')
     }
   }
 
@@ -103,8 +104,8 @@ export default function ActivityLogPage() {
         setHasMore(newActivities.length === 50)
         setOffset(currentOffset + newActivities.length)
       }
-    } catch (err) {
-      console.error('Failed to load activities:', err)
+    } catch {
+      toast.error('Failed to load activities')
     } finally {
       setLoading(false)
       setLoadingMore(false)

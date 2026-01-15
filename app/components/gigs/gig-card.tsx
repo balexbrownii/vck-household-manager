@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Gig } from '@/types'
 import { Clock, Star } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface GigCardProps {
   gig: Gig
@@ -52,10 +53,10 @@ export default function GigCard({
         router.refresh()
       } else {
         const data = await response.json()
-        alert(data.error || 'Failed to claim gig')
+        toast.error(data.error || 'Failed to claim gig')
       }
-    } catch (error) {
-      console.error('Error claiming gig:', error)
+    } catch {
+      toast.error('Failed to claim gig')
     } finally {
       setLoading(false)
     }

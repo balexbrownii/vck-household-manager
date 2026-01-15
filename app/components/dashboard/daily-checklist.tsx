@@ -6,6 +6,7 @@ import { DailyExpectation } from '@/types'
 import ChecklistToggle from './checklist-toggle'
 import AdhocItemToggle from './adhoc-item-toggle'
 import TimeoutToggle from './timeout-toggle'
+import { toast } from '@/lib/toast'
 
 interface PendingTimeout {
   id: string
@@ -71,8 +72,8 @@ export default function DailyChecklist({
         const data = await choreRes.json()
         setAdhocChores(data.chores || [])
       }
-    } catch (error) {
-      console.error('Failed to fetch adhoc items:', error)
+    } catch {
+      // Silent fail on background fetch
     }
   }, [kidId, date])
 
@@ -91,8 +92,8 @@ export default function DailyChecklist({
         setAdhocExpectations(prev => prev.filter(e => e.id !== id))
         router.refresh()
       }
-    } catch (error) {
-      console.error('Failed to delete expectation:', error)
+    } catch {
+      toast.error('Failed to delete expectation')
     }
   }
 
@@ -107,8 +108,8 @@ export default function DailyChecklist({
         setAdhocChores(prev => prev.filter(c => c.id !== id))
         router.refresh()
       }
-    } catch (error) {
-      console.error('Failed to delete chore:', error)
+    } catch {
+      toast.error('Failed to delete chore')
     }
   }
   // Build the chore description with room name and tasks

@@ -3,6 +3,7 @@
 import { ChoreAssignmentType, ChoreRoom, WeekType } from '@/types'
 import { CheckCircle2, Circle } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from '@/lib/toast'
 
 interface ChoreAssignmentDisplayProps {
   kidId: string
@@ -43,13 +44,13 @@ export default function ChoreAssignmentDisplay({
 
       if (!response.ok) {
         setComplete(complete)
-        console.error('Failed to update chore completion')
+        toast.error('Failed to update chore')
       } else if (onComplete) {
         onComplete(!complete)
       }
-    } catch (error) {
+    } catch {
       setComplete(complete)
-      console.error('Error updating chore:', error)
+      toast.error('Failed to update chore')
     } finally {
       setLoading(false)
     }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import PageHeader from '@/components/ui/page-header'
+import { toast } from '@/lib/toast'
 import {
   Camera,
   Loader2,
@@ -80,9 +81,9 @@ export default function ReviewPage() {
       }
       const data = await res.json()
       setSubmissions(data.submissions || [])
-    } catch (err) {
+    } catch {
       setError('Failed to load pending submissions')
-      console.error(err)
+      toast.error('Failed to load pending submissions')
     } finally {
       setLoading(false)
     }

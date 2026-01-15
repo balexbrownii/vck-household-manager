@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import PageHeader from '@/components/ui/page-header'
+import { toast } from '@/lib/toast'
 import {
   Plus,
   Pencil,
@@ -78,8 +79,8 @@ export default function GigManagementPage() {
         const data = await res.json()
         setGigs(data.gigs || [])
       }
-    } catch (err) {
-      console.error('Failed to load gigs:', err)
+    } catch {
+      toast.error('Failed to load gigs')
     } finally {
       setLoading(false)
     }
@@ -141,8 +142,8 @@ export default function GigManagementPage() {
         const data = await res.json()
         setError(data.error || 'Failed to save gig')
       }
-    } catch (err) {
-      setError('Failed to save gig')
+    } catch {
+      toast.error('Failed to save gig')
     } finally {
       setSaving(false)
     }
@@ -160,8 +161,8 @@ export default function GigManagementPage() {
       if (res.ok) {
         await loadGigs()
       }
-    } catch (err) {
-      console.error('Failed to delete gig:', err)
+    } catch {
+      toast.error('Failed to delete gig')
     } finally {
       setDeleting(null)
     }

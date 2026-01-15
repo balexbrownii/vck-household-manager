@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, Check, Utensils, Loader2, Sparkles } from 'lucide-react'
+import { Plus, X, Utensils, Loader2, Sparkles, Check } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface QuickAddMealProps {
   onMealAdded?: () => void
@@ -60,9 +61,11 @@ export default function QuickAddMeal({ onMealAdded }: QuickAddMealProps) {
           setNutritionPreview(null)
           onMealAdded?.()
         }, 2500)
+      } else {
+        toast.error('Failed to add meal')
       }
-    } catch (error) {
-      console.error('Failed to add meal:', error)
+    } catch {
+      toast.error('Failed to add meal')
     } finally {
       setSaving(false)
     }

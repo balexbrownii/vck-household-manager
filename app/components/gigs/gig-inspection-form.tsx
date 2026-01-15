@@ -3,6 +3,7 @@
 import { ClaimedGig, Gig } from '@/types'
 import { useState } from 'react'
 import { CheckCircle2, XCircle } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface GigInspectionFormProps {
   claimedGig: ClaimedGig & { gigs: Gig }
@@ -37,11 +38,10 @@ export default function GigInspectionForm({
         setResult('approved')
         if (onApprove) onApprove()
       } else {
-        alert('Failed to approve gig')
+        toast.error('Failed to approve gig')
       }
-    } catch (error) {
-      console.error('Error approving gig:', error)
-      alert('Error approving gig')
+    } catch {
+      toast.error('Failed to approve gig')
     } finally {
       setLoading(false)
     }
@@ -63,11 +63,10 @@ export default function GigInspectionForm({
         setResult('rejected')
         if (onReject) onReject()
       } else {
-        alert('Failed to reject gig')
+        toast.error('Failed to reject gig')
       }
-    } catch (error) {
-      console.error('Error rejecting gig:', error)
-      alert('Error rejecting gig')
+    } catch {
+      toast.error('Failed to reject gig')
     } finally {
       setLoading(false)
     }

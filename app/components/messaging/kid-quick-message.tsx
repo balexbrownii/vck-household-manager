@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { MessageSquare, Send, X } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface KidQuickMessageProps {
   onMessageSent?: () => void
@@ -45,8 +46,8 @@ export default function KidQuickMessage({ onMessageSent }: KidQuickMessageProps)
           onMessageSent?.()
         }, 1500)
       }
-    } catch (error) {
-      console.error('Failed to send message:', error)
+    } catch {
+      toast.error('Failed to send message')
     } finally {
       setSending(false)
     }

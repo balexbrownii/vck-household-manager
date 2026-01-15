@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { TimeoutViolation } from '@/types'
-import { calculateActualTimeoutDuration, formatTimeoutDuration } from '@/lib/domain/timeout-rules'
+import { calculateActualTimeoutDuration } from '@/lib/domain/timeout-rules'
 import { RotateCcw, Check } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface TimeoutTimerProps {
   timeout: TimeoutViolation
@@ -65,12 +66,13 @@ export default function TimeoutTimer({ timeout, onReset, onComplete }: TimeoutTi
       })
 
       if (!response.ok) {
-        throw new Error('Failed to reset timeout')
+        toast.error('Failed to reset timeout')
+        return
       }
 
       onReset?.()
-    } catch (err) {
-      console.error('Failed to reset:', err)
+    } catch {
+      toast.error('Failed to reset timeout')
     } finally {
       setIsResetting(false)
     }
@@ -86,12 +88,13 @@ export default function TimeoutTimer({ timeout, onReset, onComplete }: TimeoutTi
       })
 
       if (!response.ok) {
-        throw new Error('Failed to complete timeout')
+        toast.error('Failed to complete timeout')
+        return
       }
 
       onComplete?.()
-    } catch (err) {
-      console.error('Failed to complete:', err)
+    } catch {
+      toast.error('Failed to complete timeout')
     } finally {
       setIsCompleting(false)
     }

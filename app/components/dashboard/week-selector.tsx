@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from '@/lib/toast'
 
 interface WeekSelectorProps {
   currentWeek: string
@@ -25,8 +26,8 @@ export default function WeekSelector({ currentWeek }: WeekSelectorProps) {
       if (response.ok) {
         router.refresh()
       }
-    } catch (error) {
-      console.error('Failed to change week:', error)
+    } catch {
+      toast.error('Failed to change week')
     } finally {
       setLoading(false)
     }

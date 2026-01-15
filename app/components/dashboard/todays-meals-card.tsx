@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Utensils, Coffee, Sun, Moon, ChevronRight, Plus, Trash2 } from 'lucide-react'
+import { Utensils, Coffee, Sun, Moon, ChevronRight, Trash2, Plus } from 'lucide-react'
+import { toast } from '@/lib/toast'
 import { MealPlanEntryWithRecipe } from '@/types'
 import QuickAddMeal from './quick-add-meal'
 
@@ -34,9 +35,11 @@ export default function TodaysMealsCard({ meals, adhocMeals = [], onRefresh }: T
       if (res.ok) {
         if (onRefresh) onRefresh()
         router.refresh()
+      } else {
+        toast.error('Failed to delete meal')
       }
-    } catch (error) {
-      console.error('Failed to delete meal:', error)
+    } catch {
+      toast.error('Failed to delete meal')
     } finally {
       setDeletingId(null)
     }

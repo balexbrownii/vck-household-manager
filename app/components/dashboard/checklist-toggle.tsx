@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { CheckCircle2, Circle, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { toast } from '@/lib/toast'
 
 interface ChecklistToggleProps {
   kidId: string
@@ -51,7 +52,7 @@ export default function ChecklistToggle({
       if (!response.ok) {
         // Revert optimistic update on error
         setComplete(false)
-        console.error('Failed to update expectation')
+        toast.error('Failed to update')
       } else {
         setExpanded(false)
         setNote('')
@@ -59,10 +60,10 @@ export default function ChecklistToggle({
           onUpdate()
         }
       }
-    } catch (error) {
+    } catch {
       // Revert optimistic update on error
       setComplete(false)
-      console.error('Error updating expectation:', error)
+      toast.error('Failed to update')
     } finally {
       setLoading(false)
     }
@@ -85,13 +86,13 @@ export default function ChecklistToggle({
 
       if (!response.ok) {
         setComplete(true)
-        console.error('Failed to update expectation')
+        toast.error('Failed to update')
       } else if (onUpdate) {
         onUpdate()
       }
-    } catch (error) {
+    } catch {
       setComplete(true)
-      console.error('Error updating expectation:', error)
+      toast.error('Failed to update')
     } finally {
       setLoading(false)
     }

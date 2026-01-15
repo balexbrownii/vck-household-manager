@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PageHeader from '@/components/ui/page-header'
+import { toast } from '@/lib/toast'
 import {
   Sparkles,
   Briefcase,
@@ -129,8 +130,8 @@ export default function RulesPage() {
         setDisagreements(data.recentDisagreements || [])
         setMetricsSummary(data.summary || null)
       }
-    } catch (error) {
-      console.error('Error fetching rules:', error)
+    } catch {
+      toast.error('Failed to load rules')
     } finally {
       setLoading(false)
     }

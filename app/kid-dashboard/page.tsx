@@ -27,6 +27,7 @@ import { ExpandableTask } from '@/components/ui/expandable-task'
 import { LoadingSpinner } from '@/components/ui/shared'
 import KidNotifications from '@/components/messaging/kid-notifications'
 import KidQuickMessage from '@/components/messaging/kid-quick-message'
+import { toast } from '@/lib/toast'
 
 interface Kid {
   id: string
@@ -163,8 +164,8 @@ export default function KidDashboardPage() {
 
       // Refresh dashboard data
       await loadDashboard()
-    } catch (error) {
-      console.error('Failed to update expectation:', error)
+    } catch {
+      toast.error('Failed to update expectation')
     }
   }
 
@@ -182,8 +183,8 @@ export default function KidDashboardPage() {
       if (res.ok) {
         setPendingTimeout(null)
       }
-    } catch (error) {
-      console.error('Failed to complete timeout:', error)
+    } catch {
+      toast.error('Failed to complete timeout')
     } finally {
       setCompletingTimeout(false)
     }
