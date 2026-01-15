@@ -145,6 +145,25 @@ export async function POST(request: NextRequest) {
         note: note?.trim() || null,
       })
 
+      // Log to activity feed for parent visibility
+      const typeLabels: Record<string, string> = {
+        exercise: 'Exercise',
+        reading: 'Reading/Homework',
+        tidy_up: 'Tidy Up',
+        daily_chore: 'Daily Chore',
+      }
+      if (isKid && isCompleting) {
+        await supabase.from('activity_feed').insert({
+          kid_id: kidId,
+          actor_type: 'kid',
+          actor_id: kidId,
+          action: 'expectation_completed',
+          entity_type: 'expectation',
+          entity_id: expectationId,
+          message: `Completed ${typeLabels[type] || type}${note ? ': ' + note.trim() : ''}`
+        })
+      }
+
       // If there's a note, log a completion photo record for tracking
       if (note && note.trim()) {
         await supabase.from('completion_photos').insert({
@@ -193,6 +212,25 @@ export async function POST(request: NextRequest) {
           completed_by_kid: isKid,
           note: note?.trim() || null,
         })
+
+        // Log to activity feed for parent visibility
+        const typeLabels: Record<string, string> = {
+          exercise: 'Exercise',
+          reading: 'Reading/Homework',
+          tidy_up: 'Tidy Up',
+          daily_chore: 'Daily Chore',
+        }
+        if (isKid && isCompleting) {
+          await supabase.from('activity_feed').insert({
+            kid_id: kidId,
+            actor_type: 'kid',
+            actor_id: kidId,
+            action: 'expectation_completed',
+            entity_type: 'expectation',
+            entity_id: data.id,
+            message: `Completed ${typeLabels[type] || type}${note ? ': ' + note.trim() : ''}`
+          })
+        }
       }
 
       // If there's a note, log it

@@ -107,6 +107,17 @@ export async function POST(request: NextRequest) {
           },
           { onConflict: 'kid_id,date' }
         )
+
+      // Log to activity feed
+      await supabase.from('activity_feed').insert({
+        kid_id: kidId,
+        actor_type: 'parent',
+        actor_id: user.id,
+        action: 'chore_verified',
+        entity_type: 'chore',
+        entity_id: data.id,
+        message: `Verified chore: ${assignment.assignment} - ${rooms.room_name}`
+      })
     }
 
     return NextResponse.json(data, { status: 200 })

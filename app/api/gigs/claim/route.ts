@@ -39,6 +39,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get gig details first
+    const { data: gig } = await supabase
+      .from('gigs')
+      .select('title, stars')
+      .eq('id', gigId)
+      .single()
+
     // Claim the gig
     const { data, error } = await supabase
       .from('claimed_gigs')
@@ -57,6 +64,17 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    // Log to activity feed
+    await supabase.from('activity_feed').insert({
+      kid_id: kidId,
+      actor_type: 'parent', // Parent assigns on behalf of kid
+      actor_id: user.id,
+      action: 'gig_claimed',
+      entity_type: 'gig',
+      entity_id: data.id,
+      message: `Claimed gig: "${gig?.title || 'Unknown'}" (${gig?.stars || 0} stars)`
+    })
 
     return NextResponse.json(data, { status: 201 })
   } catch (error) {
